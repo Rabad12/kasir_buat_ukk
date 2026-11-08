@@ -1,0 +1,241 @@
+<?php
+// ============================================================
+// FILE: proses_transaksi.php
+// TUGAS: Menyimpan transaksi dari keranjang ke database.
+//
+// Data keranjang dikirim dari halaman kasir dalam bentuk JSON
+// lewat input tersembunyi "data_keranjang", contoh:
+//   {"1":2,"4":1}
+//
+// File ini TIDAK mempercayai data dari browser:
+// 1. JSON dicek dan dibersihkan.
+// 2. Harga dan stok diambil ulang dari database.
+// 3. Uang bayar dicek ulang.
+// 4. Baru kemudian disimpan ke tabel transaksi dan detail_transaksi.
+//
+// Semua langkah penyimpanan dibungkus "transaction" database:
+// kalau salah satu gagal, semuanya dibatalkan (rollback).
+// Jadi stok tidak akan berkurang kalau transaksi gagal disimpan.
+// ============================================================
+
+session_start();
+include 'config/koneksi.php';
+
+// Cek login.
+if (!isset($_SESSION['id_user'])) {
+    header('Location: login.php');
+    exit;
+}
+
+// File ini hanya boleh dijalankan dari form (metode POST).
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: transaksi.php');
+    exit;
+}
+
+// ------------------------------------------------------------
+// 1. AMBIL DAN CEK UANG BAYAR
+// ------------------------------------------------------------
+$bayar = filter_var(isset($_POST['bayar']) ? $_POST['bayar'] : '', FILTER_VALIDATE_INT);
+
+if ($bayar === false || $bayar < 0) {
+    $_SESSION['pesan']      = 'Uang bayar harus berupa angka bulat.';
+    $_SESSION['tipe_pesan'] = 'danger';
+    header('Location: transaksi.php');
+    exit;
+}
+
+// ------------------------------------------------------------
+// 2. BACA DATA KERANJANG (JSON) DARI FORM
+// ------------------------------------------------------------
+$data_keranjang = isset($_POST['data_keranjang']) ? $_POST['data_keranjang'] : '';
+$keranjang_mentah = json_decode($data_keranjang, true);
+
+if (!is_array($keranjang_mentah) || count($keranjang_mentah) === 0) {
+    $_SESSION['pesan']      = 'Keranjang masih kosong. Pilih barang terlebih dahulu.';
+    $_SESSION['tipe_pesan'] = 'danger';
+    header('Location: transaksi.php');
+    exit;
+}
+
+// ------------------------------------------------------------
+// 3. BERSIHKAN DATA KERANJANG
+// Hanya id barang (angka positif) dan jumlah (minimal 1) yang
+// dipakai. Data aneh dari browser otomatis dibuang.
+// ------------------------------------------------------------
+$keranjang = array();
+
+foreach ($keranjang_mentah as $id_barang => $jumlah) {
+    $id_barang = (int) $id_barang;
+    $jumlah    = (int) $jumlah;
+
+    if ($id_barang > 0 && $jumlah > 0) {
+        $keranjang[$id_barang] = $jumlah;
+    }
+}
+
+if (count($keranjang) === 0) {
+    $_SESSION['pesan']      = 'Tidak ada barang yang bisa disimpan.';
+    $_SESSION['tipe_pesan'] = 'danger';
+    header('Location: transaksi.php');
+    exit;
+}
+
+// Variabel untuk menampung hasil perhitungan.
+$daftar_item   = array();
+$total_belanja = 0;
+$error         = '';
+$id_transaksi  = 0;
+
+// Mulai transaction database.
+mysqli_begin_transaction($koneksi);
+
+// ------------------------------------------------------------
+// 4. HITUNG ULANG SEMUA ITEM MENGGUNAKAN HARGA DARI DATABASE
+// ------------------------------------------------------------
+foreach ($keranjang as $id_barang => $jumlah) {
+    $id_barang = (int) $id_barang;
+    $jumlah    = (int) $jumlah;
+
+    if ($jumlah < 1) {
+        continue;
+    }
+
+    // FOR UPDATE mengunci baris barang sebentar, supaya stok tidak
+    // diubah oleh proses lain saat transaksi ini sedang berjalan.
+    $perintah = mysqli_prepare(
+        $koneksi,
+        'SELECT id, nama_barang, harga, stok FROM barang WHERE id = ? FOR UPDATE'
+    );
+    mysqli_stmt_bind_param($perintah, 'i', $id_barang);
+    mysqli_stmt_execute($perintah);
+    $hasil  = mysqli_stmt_get_result($perintah);
+    $barang = mysqli_fetch_assoc($hasil);
+
+    if (!$barang) {
+        $error = 'Ada barang di keranjang yang sudah dihapus dari database.';
+        break;
+    }
+
+    // Cek stok sekali lagi tepat sebelum menyimpan.
+    if ($barang['stok'] < $jumlah) {
+        $error = 'Stok "' . $barang['nama_barang'] . '" tidak cukup. '
+               . 'Stok tersedia: ' . $barang['stok'] . '.';
+        break;
+    }
+
+    $subtotal      = $barang['harga'] * $jumlah;
+    $total_belanja = $total_belanja + $subtotal;
+
+    // Simpan ke array sementara untuk dipakai di langkah berikutnya.
+    $daftar_item[] = array(
+        'id_barang'   => $barang['id'],
+        'nama_barang' => $barang['nama_barang'],
+        'jumlah'      => $jumlah,
+        'subtotal'    => $subtotal,
+    );
+}
+
+// Kalau keranjang ternyata tidak berisi item yang valid.
+if ($error === '' && count($daftar_item) === 0) {
+    $error = 'Tidak ada barang yang bisa disimpan.';
+}
+
+// ------------------------------------------------------------
+// 5. CEK UANG BAYAR CUKUP ATAU TIDAK
+// ------------------------------------------------------------
+if ($error === '' && $bayar < $total_belanja) {
+    $error = 'Uang bayar kurang. Total belanja Rp '
+           . number_format($total_belanja, 0, ',', '.')
+           . ', uang bayar Rp ' . number_format($bayar, 0, ',', '.') . '.';
+}
+
+// ------------------------------------------------------------
+// 6. SIMPAN KE TABEL transaksi
+// ------------------------------------------------------------
+if ($error === '') {
+    $kembalian = $bayar - $total_belanja;
+
+    $perintah = mysqli_prepare(
+        $koneksi,
+        'INSERT INTO transaksi (tanggal, total, bayar, kembalian) VALUES (NOW(), ?, ?, ?)'
+    );
+    mysqli_stmt_bind_param($perintah, 'iii', $total_belanja, $bayar, $kembalian);
+
+    if (mysqli_stmt_execute($perintah)) {
+        // mysqli_insert_id mengambil id transaksi yang baru dibuat.
+        $id_transaksi = mysqli_insert_id($koneksi);
+    } else {
+        $error = 'Transaksi gagal disimpan: ' . mysqli_error($koneksi);
+    }
+}
+
+// ------------------------------------------------------------
+// 7. SIMPAN DETAIL DAN KURANGI STOK
+// ------------------------------------------------------------
+if ($error === '' && $id_transaksi > 0) {
+    foreach ($daftar_item as $item) {
+        // Simpan satu baris rincian barang.
+        $perintah = mysqli_prepare(
+            $koneksi,
+            'INSERT INTO detail_transaksi (id_transaksi, id_barang, jumlah, subtotal)
+             VALUES (?, ?, ?, ?)'
+        );
+        mysqli_stmt_bind_param(
+            $perintah,
+            'iiii',
+            $id_transaksi,
+            $item['id_barang'],
+            $item['jumlah'],
+            $item['subtotal']
+        );
+
+        if (!mysqli_stmt_execute($perintah)) {
+            $error = 'Rincian transaksi gagal disimpan.';
+            break;
+        }
+
+        // Kurangi stok barang sesuai jumlah yang dibeli.
+        $perintah = mysqli_prepare(
+            $koneksi,
+            'UPDATE barang SET stok = stok - ? WHERE id = ?'
+        );
+        mysqli_stmt_bind_param($perintah, 'ii', $item['jumlah'], $item['id_barang']);
+
+        if (!mysqli_stmt_execute($perintah)) {
+            $error = 'Stok barang gagal diperbarui.';
+            break;
+        }
+    }
+}
+
+// ------------------------------------------------------------
+// 8. SELESAIKAN TRANSAKSI
+// ------------------------------------------------------------
+if ($error === '') {
+    // Semua berhasil: simpan permanen.
+    mysqli_commit($koneksi);
+
+    // Keranjang tidak diperlukan lagi.
+    unset($_SESSION['keranjang']);
+    unset($_SESSION['keranjang_terakhir']);
+
+    $_SESSION['pesan']      = 'Transaksi berhasil disimpan.';
+    $_SESSION['tipe_pesan'] = 'sukses';
+
+    // Buka halaman struk sesuai id transaksi yang baru dibuat.
+    header('Location: struk.php?id=' . $id_transaksi);
+    exit;
+} else {
+    // Ada yang gagal: batalkan semua perubahan, termasuk stok.
+    mysqli_rollback($koneksi);
+
+    // Simpan keranjang supaya kasir tidak perlu memilih ulang.
+    $_SESSION['keranjang_terakhir'] = $keranjang;
+
+    $_SESSION['pesan']      = $error;
+    $_SESSION['tipe_pesan'] = 'danger';
+
+    header('Location: transaksi.php');
+    exit;
+}
