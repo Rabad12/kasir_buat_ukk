@@ -32,9 +32,13 @@ if ($id <= 0) {
 // ------------------------------------------------------------
 $perintah = mysqli_prepare(
     $koneksi,
+<<<<<<< HEAD
     'SELECT id, tanggal, subtotal, diskon_persen, diskon, pajak_persen, pajak,
             total, bayar, kembalian
      FROM transaksi WHERE id = ?'
+=======
+    'SELECT id, tanggal, total, bayar, kembalian FROM transaksi WHERE id = ?'
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 );
 mysqli_stmt_bind_param($perintah, 'i', $id);
 mysqli_stmt_execute($perintah);
@@ -71,7 +75,14 @@ include 'includes/header.php';
 
 <!-- Bagian judul dan tombol tidak ikut tercetak (class no-print). -->
 <div class="page-head no-print">
+<<<<<<< HEAD
     <div class="muted">Nota nomor #<?= $transaksi['id'] ?>.</div>
+=======
+    <div>
+        <h1>Struk Transaksi</h1>
+        <div class="muted">Nota nomor #<?= $transaksi['id'] ?>.</div>
+    </div>
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
     <div class="button-row">
         <button type="button" class="btn btn-hijau" onclick="window.print()">Cetak Struk</button>
         <a class="btn btn-abu" href="riwayat.php">Riwayat</a>
@@ -123,6 +134,7 @@ include 'includes/header.php';
     <hr class="struk-garis">
 
     <div class="struk-baris">
+<<<<<<< HEAD
         <span>Subtotal</span>
         <span>Rp <?= number_format($transaksi['subtotal'], 0, ',', '.') ?></span>
     </div>
@@ -140,6 +152,8 @@ include 'includes/header.php';
     </div>
 
     <div class="struk-baris">
+=======
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
         <strong>Total</strong>
         <strong>Rp <?= number_format($transaksi['total'], 0, ',', '.') ?></strong>
     </div>

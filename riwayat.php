@@ -35,9 +35,13 @@ if ($jumlah_transaksi > 0) {
 // Ambil semua transaksi, yang terbaru di atas.
 $hasil_transaksi = mysqli_query(
     $koneksi,
+<<<<<<< HEAD
     'SELECT id, tanggal, subtotal, diskon_persen, diskon, pajak_persen, pajak,
             total, bayar, kembalian
      FROM transaksi ORDER BY id DESC'
+=======
+    'SELECT id, tanggal, total, bayar, kembalian FROM transaksi ORDER BY id DESC'
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 );
 
 // Siapkan perintah untuk mengambil detail item.
@@ -57,7 +61,14 @@ include 'includes/header.php';
 ?>
 
 <div class="page-head">
+<<<<<<< HEAD
     <div class="muted">Semua transaksi yang tersimpan di database.</div>
+=======
+    <div>
+        <h1>Riwayat Transaksi</h1>
+        <div class="muted">Semua transaksi yang tersimpan di database.</div>
+    </div>
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
     <a class="btn btn-hijau" href="transaksi.php">+ Transaksi Baru</a>
 </div>
 
@@ -108,6 +119,7 @@ include 'includes/header.php';
             <details>
                 <summary>Lihat detail item</summary>
 
+<<<<<<< HEAD
                 <div class="rincian-transaksi">
                     <div class="struk-baris">
                         <span>Subtotal</span>
@@ -132,6 +144,8 @@ include 'includes/header.php';
                     </div>
                 </div>
 
+=======
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
                 <div class="table-wrapper" style="margin-top: 10px;">
                     <table>
                         <thead>

@@ -17,7 +17,10 @@
 
 session_start();
 include 'config/koneksi.php';
+<<<<<<< HEAD
 include 'config/diskon.php';
+=======
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
 // Cek login.
 if (!isset($_SESSION['id_user'])) {
@@ -78,6 +81,7 @@ if (isset($_SESSION['keranjang_terakhir']) && is_array($_SESSION['keranjang_tera
     unset($_SESSION['keranjang_terakhir']);
 }
 
+<<<<<<< HEAD
 // Menyusun keterangan aturan diskon untuk ditampilkan di halaman.
 $teks_aturan_diskon = array();
 
@@ -88,13 +92,22 @@ foreach ($diskon_bertingkat as $aturan) {
     }
 }
 
+=======
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 $judul_halaman = 'Kasir';
 $halaman_aktif = 'transaksi';
 include 'includes/header.php';
 ?>
 
 <div class="page-head">
+<<<<<<< HEAD
     <div class="muted">Klik tombol + pada barang, lalu masukkan uang bayar.</div>
+=======
+    <div>
+        <h1>Kasir</h1>
+        <div class="muted">Klik tombol + pada barang, lalu masukkan uang bayar.</div>
+    </div>
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
     <a class="btn btn-abu" href="riwayat.php">Lihat Riwayat</a>
 </div>
 
@@ -126,6 +139,7 @@ include 'includes/header.php';
         <div id="isi-keranjang"></div>
 
         <div class="ringkasan-keranjang">
+<<<<<<< HEAD
             <div class="baris-ringkasan">
                 <span>Subtotal</span>
                 <span id="subtotal-belanja">Rp 0</span>
@@ -141,26 +155,37 @@ include 'includes/header.php';
                 <span id="nilai-pajak">Rp 0</span>
             </div>
 
+=======
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
             <div class="baris-total">
                 <span>Total Belanja</span>
                 <span class="total-besar" id="total-belanja">Rp 0</span>
             </div>
 
+<<<<<<< HEAD
             <div class="hint" style="margin: -6px 0 14px;">
                 Diskon otomatis: <?= htmlspecialchars(implode(', ', $teks_aturan_diskon)) ?>.
                 Pajak <?= (int) $pajak_persen ?>% dihitung setelah diskon.
             </div>
 
+=======
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
             <form method="post" action="proses_transaksi.php" id="form-bayar">
                 <!-- Data keranjang akan diisi oleh JavaScript saat submit. -->
                 <input type="hidden" name="data_keranjang" id="data-keranjang" value="">
 
                 <div class="form-group">
                     <label for="uang-bayar">Uang Bayar (Rp)</label>
+<<<<<<< HEAD
                     <input type="text" id="uang-bayar" name="bayar"
                            inputmode="numeric" data-format-ribuan
                            autocomplete="off"
                            placeholder="Contoh: 100.000" required>
+=======
+                    <input type="number" id="uang-bayar" name="bayar"
+                           min="0" step="1" inputmode="numeric"
+                           placeholder="Contoh: 100000" required>
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
                     <div class="hint">Masukkan uang yang diterima dari pembeli.</div>
                 </div>
 
@@ -190,10 +215,15 @@ include 'includes/header.php';
     bisa mengganggu kode HTML/JavaScript.
 -->
 <script>
+<<<<<<< HEAD
     const dataBarang   = <?= json_encode((object) $data_barang_js, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     let keranjang      = <?= json_encode((object) $keranjang_awal, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     const aturanDiskon = <?= json_encode($diskon_bertingkat, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     const pajakPersen  = <?= (int) $pajak_persen ?>;
+=======
+    const dataBarang = <?= json_encode((object) $data_barang_js, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    let keranjang    = <?= json_encode((object) $keranjang_awal, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 </script>
 <script src="assets/js/kasir.js"></script>
 

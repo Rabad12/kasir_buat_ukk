@@ -24,7 +24,14 @@ include 'includes/header.php';
 ?>
 
 <div class="page-head">
+<<<<<<< HEAD
     <div class="muted">Total <?= $jumlah ?> barang tersimpan.</div>
+=======
+    <div>
+        <h1>Data Barang</h1>
+        <div class="muted">Total <?= $jumlah ?> barang tersimpan.</div>
+    </div>
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
     <a class="btn btn-hijau" href="barang_tambah.php">+ Tambah Barang</a>
 </div>
 

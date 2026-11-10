@@ -17,10 +17,13 @@
 var daftarBarangEl   = document.getElementById('daftar-barang');
 var isiKeranjangEl   = document.getElementById('isi-keranjang');
 var jumlahItemEl     = document.getElementById('jumlah-item');
+<<<<<<< HEAD
 var subtotalBelanjaEl = document.getElementById('subtotal-belanja');
 var labelDiskonEl    = document.getElementById('label-diskon');
 var nilaiDiskonEl    = document.getElementById('nilai-diskon');
 var nilaiPajakEl     = document.getElementById('nilai-pajak');
+=======
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 var totalBelanjaEl   = document.getElementById('total-belanja');
 var kembalianEl      = document.getElementById('kembalian');
 var peringatanEl     = document.getElementById('peringatan-bayar');
@@ -53,11 +56,17 @@ function escapeHtml(teks) {
 }
 
 // Mengambil uang bayar yang diketik kasir.
+<<<<<<< HEAD
 // Nilai bisa berisi titik ribuan (contoh: 100.000), jadi titik
 // dan karakter lain dibuang dulu. Kalau kosong, dianggap 0.
 function ambilUangBayar() {
     var teks  = String(uangBayarEl.value).replace(/[^\d]/g, '');
     var nilai = parseInt(teks, 10);
+=======
+// Kalau kosong atau bukan angka, dianggap 0.
+function ambilUangBayar() {
+    var nilai = parseInt(uangBayarEl.value, 10);
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
     if (isNaN(nilai) || nilai < 0) {
         return 0;
@@ -129,15 +138,22 @@ function kosongkanKeranjang() {
 // FUNGSI HITUNG
 // ============================================================
 
+<<<<<<< HEAD
 // Menghitung subtotal belanja dari harga di dataBarang.
 // Subtotal = jumlah semua harga barang sebelum diskon dan pajak.
 function hitungSubtotal() {
     var subtotal = 0;
+=======
+// Menghitung total belanja dari harga di dataBarang.
+function hitungTotal() {
+    var total = 0;
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
     for (var id in keranjang) {
         var barang = dataBarang[id];
 
         if (barang) {
+<<<<<<< HEAD
             subtotal = subtotal + (barang.harga * keranjang[id]);
         }
     }
@@ -187,6 +203,13 @@ function hitungRincian() {
 // Total akhir yang harus dibayar (setelah diskon dan pajak).
 function hitungTotal() {
     return hitungRincian().total;
+=======
+            total = total + (barang.harga * keranjang[id]);
+        }
+    }
+
+    return total;
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 }
 
 // Menghitung kembalian. Kalau uang kurang, hasilnya 0.
@@ -324,6 +347,7 @@ function tampilkanKeranjang() {
     }
 }
 
+<<<<<<< HEAD
 // Memperbarui subtotal, diskon, pajak, total, kembalian,
 // peringatan, dan tombol Bayar.
 function perbaruiPembayaran() {
@@ -337,13 +361,28 @@ function perbaruiPembayaran() {
     nilaiPajakEl.textContent      = formatRupiah(rincian.pajak);
     totalBelanjaEl.textContent    = formatRupiah(rincian.total);
     kembalianEl.textContent       = formatRupiah(hitungKembalian());
+=======
+// Memperbarui total, kembalian, peringatan, dan tombol Bayar.
+function perbaruiPembayaran() {
+    var total  = hitungTotal();
+    var uang   = ambilUangBayar();
+    var adaItem = Object.keys(keranjang).length > 0;
+
+    totalBelanjaEl.textContent = formatRupiah(total);
+    kembalianEl.textContent    = formatRupiah(hitungKembalian());
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
     if (!adaItem) {
         peringatanEl.textContent = 'Keranjang masih kosong. Pilih barang terlebih dahulu.';
         peringatanEl.hidden      = false;
         tombolBayarEl.disabled   = true;
+<<<<<<< HEAD
     } else if (uang < rincian.total) {
         peringatanEl.textContent = 'Uang bayar kurang ' + formatRupiah(rincian.total - uang) + '.';
+=======
+    } else if (uang < total) {
+        peringatanEl.textContent = 'Uang bayar kurang ' + formatRupiah(total - uang) + '.';
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
         peringatanEl.hidden      = false;
         tombolBayarEl.disabled   = true;
     } else {

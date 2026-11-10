@@ -68,19 +68,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Kasir</title>
 
+<<<<<<< HEAD
     <!-- Font Poppins dan dua file CSS: CSS lama lalu tema baru. -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/tema-kasir.css">
+=======
+    <!-- Tampilan login memakai file CSS yang sama dengan halaman lain. -->
+    <link rel="stylesheet" href="assets/css/style.css">
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 </head>
 <body class="halaman-login">
 
 <div class="kartu-login">
     <div class="login-judul">
+<<<<<<< HEAD
         <div class="logo-login">K</div>
         <h1>Selamat Datang</h1>
+=======
+        <div class="logo-login">Kasir</div>
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
         <p>Silakan masuk untuk mulai bekerja</p>
     </div>
 

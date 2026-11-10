@@ -34,16 +34,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $harga       = trim(isset($_POST['harga']) ? $_POST['harga'] : '');
     $stok        = trim(isset($_POST['stok']) ? $_POST['stok'] : '');
 
+<<<<<<< HEAD
     // Harga boleh diketik dengan titik ribuan (contoh: 65.000).
     // Titik dibuang dulu supaya bisa dicek dan disimpan sebagai angka.
     $harga = str_replace('.', '', $harga);
 
+=======
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
     // ---------- VALIDASI DASAR ----------
     if ($kode_barang === '' || $nama_barang === '' || $harga === '' || $stok === '') {
         $pesan = 'Semua kolom wajib diisi.';
     } elseif (!ctype_digit($harga)) {
+<<<<<<< HEAD
         // ctype_digit hanya menerima angka bulat (0-9).
         $pesan = 'Harga harus berupa angka bulat. Contoh: 15.000.';
+=======
+        // ctype_digit hanya menerima angka bulat (0-9), tanpa titik/koma.
+        $pesan = 'Harga harus berupa angka bulat. Contoh: 15000 (tanpa titik).';
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
     } elseif (!ctype_digit($stok)) {
         $pesan = 'Stok harus berupa angka bulat. Contoh: 20.';
     } else {
@@ -85,7 +93,14 @@ include 'includes/header.php';
 ?>
 
 <div class="page-head">
+<<<<<<< HEAD
     <div class="muted">Isi data barang baru dengan lengkap.</div>
+=======
+    <div>
+        <h1>Tambah Barang</h1>
+        <div class="muted">Isi data barang baru dengan lengkap.</div>
+    </div>
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
     <a class="btn btn-abu" href="barang.php">&larr; Kembali</a>
 </div>
 
@@ -109,11 +124,17 @@ include 'includes/header.php';
         <div class="form-row">
             <div class="form-group">
                 <label for="harga">Harga (Rp)</label>
+<<<<<<< HEAD
                 <input type="text" id="harga" name="harga"
                        value="<?= htmlspecialchars($harga) ?>"
                        inputmode="numeric" data-format-ribuan
                        autocomplete="off"
                        placeholder="Contoh: 65.000" required>
+=======
+                <input type="number" id="harga" name="harga"
+                       value="<?= htmlspecialchars($harga) ?>"
+                       placeholder="Contoh: 65000" min="0" step="1" required>
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
             </div>
 
             <div class="form-group">

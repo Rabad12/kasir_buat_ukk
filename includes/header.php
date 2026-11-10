@@ -2,9 +2,15 @@
 // ============================================================
 // FILE: includes/header.php
 // TUGAS: Menampilkan bagian atas semua halaman, yaitu:
+<<<<<<< HEAD
 //   - pemuatan font Google dan file CSS tema
 //   - sidebar kapsul melayang di sisi kiri
 //   - header halaman: label "Primary", judul, pencarian, avatar
+=======
+//   - pemanggilan file CSS (assets/css/style.css)
+//   - sidebar menu di sisi kiri
+//   - tombol hamburger untuk layar HP
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 //   - kotak pesan sukses/error
 //
 // Setiap halaman yang memakai file ini harus sudah menjalankan
@@ -15,6 +21,7 @@
 $judul_halaman = isset($judul_halaman) ? $judul_halaman : 'Aplikasi Kasir';
 $halaman_aktif = isset($halaman_aktif) ? $halaman_aktif : '';
 
+<<<<<<< HEAD
 /**
  * Membuat inisial nama pengguna untuk ditampilkan di avatar bulat.
  *
@@ -58,6 +65,15 @@ $menu_sidebar = array(
     array('kunci' => 'barang',    'judul' => 'Produk',      'file' => 'barang.php',    'ikon' => $ikon_produk),
     array('kunci' => 'transaksi', 'judul' => 'Kasir',       'file' => 'transaksi.php', 'ikon' => $ikon_kasir),
     array('kunci' => 'riwayat',   'judul' => 'Riwayat',     'file' => 'riwayat.php',   'ikon' => $ikon_riwayat),
+=======
+// Daftar menu sidebar disimpan di array supaya tidak perlu
+// menulis ulang kode HTML untuk setiap menu.
+$menu_sidebar = array(
+    array('kunci' => 'index',     'judul' => 'Dashboard',   'file' => 'index.php'),
+    array('kunci' => 'barang',    'judul' => 'Data Barang', 'file' => 'barang.php'),
+    array('kunci' => 'transaksi', 'judul' => 'Kasir',       'file' => 'transaksi.php'),
+    array('kunci' => 'riwayat',   'judul' => 'Riwayat',     'file' => 'riwayat.php'),
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 );
 
 // Pesan bisa dikirim langsung oleh halaman ($pesan), atau disimpan
@@ -81,6 +97,7 @@ if ($pesan === '' && isset($_SESSION['pesan'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($judul_halaman) ?> - Kasir</title>
 
+<<<<<<< HEAD
     <!-- Font Poppins dari Google Fonts. Kalau offline, browser memakai font cadangan. -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -97,13 +114,37 @@ if ($pesan === '' && isset($_SESSION['pesan'])) {
     <a href="index.php" class="merek-sidebar" aria-label="Beranda Kasir">
         <span class="logo-kasir">K</span>
     </a>
+=======
+    <!-- Semua warna dan tampilan diatur di file CSS terpisah. -->
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<!-- ==================== SIDEBAR KIRI ==================== -->
+<aside class="sidebar" id="sidebar">
+    <div class="merek-sidebar">
+        <div>
+            <strong>Kasir</strong>
+            <small>Aplikasi Kasir Sederhana</small>
+        </div>
+    </div>
+
+    <div class="info-pengguna-sidebar">
+        <span class="label">Kasir Aktif</span>
+        <strong><?= htmlspecialchars(isset($_SESSION['nama']) ? $_SESSION['nama'] : 'Kasir') ?></strong>
+    </div>
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
     <nav class="menu-sidebar">
         <?php foreach ($menu_sidebar as $menu): ?>
             <a href="<?= $menu['file'] ?>"
+<<<<<<< HEAD
                class="<?= $halaman_aktif === $menu['kunci'] ? 'aktif' : '' ?>"
                <?= $halaman_aktif === $menu['kunci'] ? 'aria-current="page"' : '' ?>>
                 <?= $menu['ikon'] ?>
+=======
+               class="<?= $halaman_aktif === $menu['kunci'] ? 'aktif' : '' ?>">
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
                 <span><?= htmlspecialchars($menu['judul']) ?></span>
             </a>
         <?php endforeach; ?>
@@ -111,10 +152,21 @@ if ($pesan === '' && isset($_SESSION['pesan'])) {
         <!-- Logout diletakkan paling bawah agar tidak mudah terpencet. -->
         <a href="logout.php" class="menu-keluar"
            onclick="return confirm('Yakin ingin keluar dari aplikasi?')">
+<<<<<<< HEAD
             <?= $ikon_keluar ?>
             <span>Logout</span>
         </a>
     </nav>
+=======
+            <span>Logout</span>
+        </a>
+    </nav>
+
+    <div class="footer-sidebar">
+        Aplikasi Kasir Sederhana<br>
+        &copy; <?= date('Y') ?>
+    </div>
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 </aside>
 
 <!-- ==================== AREA KONTEN ==================== -->
@@ -131,6 +183,7 @@ if ($pesan === '' && isset($_SESSION['pesan'])) {
 
     <main class="container">
 
+<<<<<<< HEAD
         <!-- ==================== HEADER HALAMAN ==================== -->
         <header class="header-halaman">
             <div class="kelompok-judul">
@@ -156,6 +209,8 @@ if ($pesan === '' && isset($_SESSION['pesan'])) {
             </div>
         </header>
 
+=======
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
     <?php
     // Menampilkan pesan kalau ada. htmlspecialchars dipakai supaya
     // isi pesan tidak bisa menyisipkan kode HTML berbahaya.

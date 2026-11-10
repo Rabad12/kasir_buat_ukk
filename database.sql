@@ -53,6 +53,7 @@ CREATE TABLE barang (
 -- Menyimpan satu baris untuk setiap transaksi penjualan.
 -- ============================================================
 CREATE TABLE transaksi (
+<<<<<<< HEAD
     id            INT AUTO_INCREMENT PRIMARY KEY,
     tanggal       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     subtotal      INT NOT NULL DEFAULT 0,
@@ -63,6 +64,13 @@ CREATE TABLE transaksi (
     total         INT NOT NULL DEFAULT 0,
     bayar         INT NOT NULL DEFAULT 0,
     kembalian     INT NOT NULL DEFAULT 0
+=======
+    id        INT AUTO_INCREMENT PRIMARY KEY,
+    tanggal   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    total     INT NOT NULL DEFAULT 0,
+    bayar     INT NOT NULL DEFAULT 0,
+    kembalian INT NOT NULL DEFAULT 0
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 ) ENGINE=InnoDB;
 
 -- ============================================================

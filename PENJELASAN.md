@@ -14,7 +14,11 @@ Aplikasi ini adalah kasir sederhana untuk toko kecil. Fitur utamanya:
 1. Login dan logout kasir memakai session PHP.
 2. Data barang (tambah, lihat, edit, hapus).
 3. Transaksi penjualan dengan keranjang.
+<<<<<<< HEAD
 4. Perhitungan subtotal, diskon bertingkat, pajak 10%, total, uang bayar, dan kembalian.
+=======
+4. Perhitungan total, uang bayar, dan kembalian.
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 5. Pengurangan stok otomatis setelah transaksi disimpan.
 6. Struk/nota yang bisa dicetak.
 7. Riwayat transaksi beserta detail barang yang dibeli.
@@ -179,8 +183,13 @@ pesan error      index.php (Dashboard)
                     |
                     v
              proses_transaksi.php
+<<<<<<< HEAD
              (hitung diskon, pajak, total,
               cek bayar, simpan, kurangi stok)
+=======
+             (hitung total, cek bayar,
+              simpan, kurangi stok)
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
                     |
                     v
                 struk.php  ---> tombol Cetak
@@ -230,7 +239,11 @@ Semua data diambil dengan `mysqli_query` karena tidak ada input dari pengguna.
 Halaman kasir sekarang memakai **dua kolom**:
 
 - Kiri: daftar barang berbentuk kartu, lengkap dengan pencarian nama.
+<<<<<<< HEAD
 - Kanan: keranjang belanja, subtotal, diskon, pajak, total, uang bayar, dan kembalian.
+=======
+- Kanan: keranjang belanja, total, uang bayar, dan kembalian.
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
 Alurnya:
 
@@ -247,11 +260,16 @@ Alurnya:
 4. Kalau barang sudah ada di keranjang, kartunya menampilkan tombol **−** dan angka jumlah di samping tombol **+**.
 5. Tombol **+** otomatis nonaktif kalau jumlah sudah sama dengan stok, dan muncul tulisan "Stok habis/maks".
 6. Tombol **+ / −** di daftar barang dan di keranjang memanggil fungsi yang sama, jadi jumlahnya selalu sinkron.
+<<<<<<< HEAD
 7. Subtotal, diskon, pajak, total belanja, kembalian, dan status tombol Bayar dihitung ulang setiap kali keranjang berubah oleh `renderSemua()`.
+=======
+7. Total belanja, kembalian, dan status tombol Bayar dihitung ulang setiap kali keranjang berubah oleh `renderSemua()`.
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 8. Saat tombol **Bayar** diklik, JavaScript mengisi input tersembunyi `data_keranjang` dengan JSON, lalu form dikirim ke `proses_transaksi.php`.
 
 Harga dan stok yang tampil diambil dari database saat halaman dibuka. Harga **tidak pernah dipercaya dari browser**; server selalu menghitung ulang.
 
+<<<<<<< HEAD
 Kolom **Uang Bayar** dan kolom **Harga** pada form barang otomatis diberi titik ribuan saat diketik. Contoh: `1000` menjadi `1.000`, `100000` menjadi `100.000`. Titik itu hanya untuk tampilan; server membuangnya sebelum menyimpan angka.
 
 **Diskon bertingkat** dihitung otomatis dari subtotal belanja:
@@ -269,15 +287,22 @@ Contoh: subtotal Rp 260.000 mendapat diskon 10% sebesar Rp 26.000. Dasar pajak m
 
 Aturan diskon dan pajak disimpan di `config/diskon.php`, jadi mudah diubah tanpa mencari kode perhitungan di banyak file.
 
+=======
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 ### 5.5 Simpan transaksi
 
 `proses_transaksi.php` melakukan ini secara berurutan:
 
+<<<<<<< HEAD
 1. Cek uang bayar berupa angka. Titik ribuan dibuang lebih dulu, jadi `100.000` tetap dianggap `100000`.
+=======
+1. Cek uang bayar berupa angka.
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 2. Membaca JSON dari input `data_keranjang`, lalu membersihkan id dan jumlahnya.
 3. Cek keranjang tidak kosong.
 4. Mulai transaction database: `mysqli_begin_transaction()`.
 5. Ambil ulang setiap barang dengan `SELECT ... FOR UPDATE`.
+<<<<<<< HEAD
 6. Hitung ulang **subtotal** dari harga database.
 7. Cek stok masih cukup.
 8. Cari persentase diskon berdasarkan subtotal, lalu hitung nilai diskon.
@@ -294,6 +319,21 @@ Aturan diskon dan pajak disimpan di `config/diskon.php`, jadi mudah diubah tanpa
 17. Kalau ada yang gagal: `mysqli_rollback()` (semua perubahan dibatalkan, termasuk stok).
 18. Kasir diarahkan ke `struk.php?id=...`. Halaman kasir yang baru otomatis memakai keranjang kosong.
 19. Kalau pembayaran gagal (misalnya uang kurang atau stok berubah), keranjang disimpan sementara di `$_SESSION['keranjang_terakhir']` supaya kasir tidak perlu memilih ulang.
+=======
+6. Hitung ulang total dari harga database.
+7. Cek stok masih cukup.
+8. Cek `bayar >= total`. Kalau kurang, transaksi dibatalkan.
+9. Hitung `kembalian = bayar - total`.
+10. `INSERT` ke tabel `transaksi`.
+11. Ambil id transaksi baru dengan `mysqli_insert_id()`.
+12. Untuk setiap item:
+    - `INSERT` ke `detail_transaksi`,
+    - `UPDATE barang SET stok = stok - jumlah`.
+13. Kalau semua berhasil: `mysqli_commit()`.
+14. Kalau ada yang gagal: `mysqli_rollback()` (semua perubahan dibatalkan, termasuk stok).
+15. Kasir diarahkan ke `struk.php?id=...`. Halaman kasir yang baru otomatis memakai keranjang kosong.
+16. Kalau pembayaran gagal (misalnya uang kurang atau stok berubah), keranjang disimpan sementara di `$_SESSION['keranjang_terakhir']` supaya kasir tidak perlu memilih ulang.
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
 > Catatan penting: keranjang sehari-hari disimpan di JavaScript, bukan di session. Session hanya dipakai untuk login, pesan sementara, dan cadangan keranjang saat pembayaran gagal.
 
@@ -321,11 +361,17 @@ web-kasir/
 │   ├── css/
 │   │   └── style.css          Semua warna dan tampilan aplikasi
 │   └── js/
+<<<<<<< HEAD
 │       ├── kasir.js           Keranjang, pencarian, dan pembayaran kasir
 │       └── format_angka.js    Titik ribuan otomatis pada kolom angka
 ├── config/
 │   ├── koneksi.php          Koneksi ke database MySQL
 │   └── diskon.php           Aturan diskon bertingkat dan pajak
+=======
+│       └── kasir.js           Keranjang, pencarian, dan pembayaran kasir
+├── config/
+│   └── koneksi.php          Koneksi ke database MySQL
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 ├── includes/
 │   ├── header.php           Bagian atas halaman + sidebar + pesan
 │   └── footer.php           Bagian bawah halaman + script sidebar
@@ -443,7 +489,11 @@ SELECT * FROM transaksi ORDER BY id DESC LIMIT 5;
 Validasi:
 
 1. Semua kolom wajib diisi.
+<<<<<<< HEAD
 2. Harga harus angka bulat (`ctype_digit`). Titik ribuan dibuang lebih dulu, jadi `65.000` diterima sebagai `65000`.
+=======
+2. Harga harus angka bulat (`ctype_digit`).
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 3. Stok harus angka bulat.
 4. Kode barang tidak boleh kembar (dicek dengan `SELECT`).
 
@@ -516,9 +566,12 @@ Bagian penting:
 - `$keranjang_awal` dipakai untuk mengembalikan isi keranjang kalau pembayaran sebelumnya gagal.
 - Tampilan daftar barang dan keranjang diisi oleh `assets/js/kasir.js`.
 - Form pembayaran punya input tersembunyi `data_keranjang` yang diisi JSON saat tombol Bayar diklik.
+<<<<<<< HEAD
 - Kolom uang bayar memakai atribut `data-format-ribuan`, sehingga angkanya otomatis diberi titik ribuan oleh `assets/js/format_angka.js`.
 - Ringkasan keranjang menampilkan subtotal, diskon bertingkat, pajak 10%, dan total akhir.
 - Aturan diskon dari `config/diskon.php` ikut dikirim ke JavaScript supaya tampilan langsung berubah saat keranjang berubah.
+=======
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 - Server tetap memvalidasi ulang semuanya di `proses_transaksi.php`.
 
 **Kalau dihapus:** menu Kasir tidak bisa dibuka dan transaksi tidak bisa dibuat.
@@ -535,6 +588,7 @@ Sekarang file ini membaca JSON dari input `data_keranjang`, contoh:
 
 Lalu data dibersihkan: id harus angka positif, jumlah minimal 1. Setelah itu harga dan stok diambil ulang dari database.
 
+<<<<<<< HEAD
 Setelah subtotal dihitung, file ini juga menghitung diskon bertingkat dan pajak:
 
 ```php
@@ -554,6 +608,8 @@ INSERT INTO transaksi
 VALUES (NOW(), ?, ?, ?, ?, ?, ?, ?, ?)
 ```
 
+=======
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 Inilah file yang mengubah stok. Bagian terpenting:
 
 ```php
@@ -590,8 +646,11 @@ mysqli_rollback($koneksi);
   ```
 
 - Harga satuan dihitung dari `subtotal / jumlah`.
+<<<<<<< HEAD
 - Menampilkan rincian `subtotal`, `diskon`, `pajak`, lalu `total` akhir.
 - Diskon hanya muncul kalau nilainya lebih dari 0.
+=======
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 - Tombol cetak: `onclick="window.print()"`.
 
 **Kalau dihapus:** transaksi sudah tersimpan di database, tetapi kasir tidak bisa melihat/mencetak struk setelah menyimpan. Riwayat juga tidak bisa membuka struk.
@@ -602,7 +661,10 @@ mysqli_rollback($koneksi);
 
 - Menampilkan jumlah transaksi, total pendapatan, dan rata-rata.
 - Setiap transaksi punya `<details>` untuk detail item.
+<<<<<<< HEAD
 - Di dalam `<details>` ada rincian subtotal, diskon, pajak, dan total.
+=======
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 - Perintah detail disiapkan sekali di luar perulangan, lalu dijalankan berulang dengan id transaksi yang berbeda.
 
 ### 7.15 `database.sql`
@@ -648,6 +710,7 @@ Fungsi-fungsi utamanya:
 | `kurangiDariKeranjang(id)` | Mengurangi 1 barang, hapus kalau menjadi 0 |
 | `hapusDariKeranjang(id)` | Menghapus satu barang dari keranjang |
 | `kosongkanKeranjang()` | Menghapus semua isi keranjang setelah konfirmasi |
+<<<<<<< HEAD
 | `hitungSubtotal()` | Menjumlahkan `harga × jumlah` sebelum diskon |
 | `hitungDiskon(subtotal)` | Mencari persentase dan nilai diskon yang berlaku |
 | `hitungPajak(dasarPajak)` | Menghitung pajak 10% dari dasar pajak |
@@ -661,6 +724,15 @@ Fungsi-fungsi utamanya:
 
 Nilai `aturanDiskon` dan `pajakPersen` dikirim dari `transaksi.php` (diambil dari `config/diskon.php`), sehingga JavaScript dan PHP memakai aturan yang sama. Perhitungan JavaScript hanya untuk tampilan; angka final tetap dihitung ulang oleh server.
 
+=======
+| `hitungTotal()` | Menjumlahkan `harga × jumlah` semua item |
+| `hitungKembalian()` | Menghitung `uang bayar − total` |
+| `tampilkanDaftarBarang()` | Menggambar kartu barang sesuai pencarian |
+| `tampilkanKeranjang()` | Menggambar item keranjang dan subtotal |
+| `perbaruiPembayaran()` | Memperbarui total, kembalian, peringatan, dan tombol Bayar |
+| `renderSemua()` | Memanggil ketiga fungsi tampilan sekaligus |
+
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 Bagian akhir file memasang tiga pendengar kejadian (event):
 
 1. `input` pada kotak pencarian → menyaring daftar barang.
@@ -669,6 +741,7 @@ Bagian akhir file memasang tiga pendengar kejadian (event):
 
 **Kalau dihapus:** daftar barang dan keranjang tidak muncul karena keduanya diisi oleh JavaScript.
 
+<<<<<<< HEAD
 ### 7.18 `assets/js/format_angka.js`
 
 **Tugas:** memberi titik ribuan otomatis pada kolom angka.
@@ -734,6 +807,8 @@ File ini di-include oleh `transaksi.php` dan `proses_transaksi.php`. `transaksi.
 
 **Kalau diubah:** seluruh aplikasi otomatis memakai aturan baru. Transaksi lama tidak berubah karena persentase diskon dan pajak sudah tersimpan di database.
 
+=======
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 ---
 
 ## 8. Penjelasan Database
@@ -788,6 +863,7 @@ Relasi:
 |---|---|---|
 | id | INT AUTO_INCREMENT | Nomor transaksi |
 | tanggal | DATETIME | Diisi `NOW()` saat simpan |
+<<<<<<< HEAD
 | subtotal | INT | Total semua item sebelum diskon |
 | diskon_persen | TINYINT | Persentase diskon yang berlaku (0, 5, 10, atau 15) |
 | diskon | INT | Nilai diskon dalam rupiah |
@@ -799,6 +875,12 @@ Relasi:
 
 **Kenapa persentase diskon dan pajak ikut disimpan?** Supaya struk lama tetap menampilkan angka yang benar walaupun aturan di `config/diskon.php` diubah di kemudian hari. Data transaksi adalah catatan sejarah, jadi tidak boleh ikut berubah ketika aturan diperbarui.
 
+=======
+| total | INT | Total setelah semua item dijumlahkan |
+| bayar | INT | Uang yang diterima |
+| kembalian | INT | `bayar - total` |
+
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 ### 8.5 Tabel `detail_transaksi`
 
 | Kolom | Tipe | Keterangan |
@@ -819,9 +901,15 @@ Contoh:
 
 `transaksi`:
 
+<<<<<<< HEAD
 | id | tanggal | subtotal | diskon_persen | diskon | pajak_persen | pajak | total | bayar | kembalian |
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | 2026-11-08 10:00 | 12000 | 0 | 0 | 10 | 1200 | 13200 | 20000 | 6800 |
+=======
+| id | tanggal | total | bayar | kembalian |
+|---|---|---|---|---|
+| 1 | 2026-11-08 10:00 | 12000 | 20000 | 8000 |
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
 `detail_transaksi`:
 
@@ -830,8 +918,11 @@ Contoh:
 | 1 | 1 | 5 | 2 | 6000 |
 | 2 | 1 | 7 | 1 | 4000 |
 
+<<<<<<< HEAD
 Pada contoh ini subtotal Rp 12.000 belum mencapai batas diskon, jadi diskon 0%. Pajak 10% tetap dihitung: Rp 1.200. Total akhirnya Rp 13.200.
 
+=======
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 ### 8.7 Data contoh
 
 `database.sql` berisi 10 barang:
@@ -938,8 +1029,11 @@ number_format(65000, 0, ',', '.')  // hasil: 65.000
 
 Angka aslinya tetap 65000 di database. `number_format` hanya mengubah tampilan.
 
+<<<<<<< HEAD
 Untuk kolom input, titik ribuan ditambahkan oleh `assets/js/format_angka.js`. Angka yang dikirim masih bisa berisi titik; server membuangnya sebelum diproses.
 
+=======
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 ### 9.8 `header('Location: ...')`
 
 Dipakai untuk memindahkan halaman. Setelah `header()`, wajib ada `exit;` supaya kode di bawahnya tidak ikut dijalankan.
@@ -978,7 +1072,11 @@ Aplikasi ini level dasar, jadi belum ada:
 - Pencatatan user pada setiap transaksi.
 - Pagination untuk data yang sangat banyak.
 - Barcode scanner.
+<<<<<<< HEAD
 - Pajak berbeda per barang atau service charge tambahan. (Pajak 10% per transaksi sudah ada.)
+=======
+- Pajak/service charge.
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
 Semua itu bisa ditambahkan, tetapi sengaja tidak dimasukkan agar kode tetap mudah dipahami.
 
@@ -1097,12 +1195,19 @@ Transaksi lama tidak berubah karena `detail_transaksi` menyimpan `subtotal` saat
 
 Dua tempat:
 
+<<<<<<< HEAD
 1. `assets/js/kasir.js` di fungsi `hitungSubtotal()`, `hitungDiskon()`, `hitungPajak()`, dan `hitungRincian()` untuk menampilkan subtotal, diskon, pajak, dan total secara langsung saat keranjang berubah.
 2. `proses_transaksi.php` untuk menghitung ulang semuanya sebelum menyimpan.
 
 Aturan diskon dan pajak diambil dari `config/diskon.php` dan dikirim ke JavaScript, jadi tampilan dan server memakai aturan yang sama.
 
 Angka dari JavaScript hanya untuk tampilan. Angka yang benar-benar dipakai saat menyimpan selalu hasil hitung server dari harga database.
+=======
+1. `assets/js/kasir.js` di fungsi `hitungTotal()` untuk menampilkan total secara langsung saat keranjang berubah.
+2. `proses_transaksi.php` untuk menghitung ulang sebelum menyimpan.
+
+Total dari JavaScript hanya untuk tampilan. Angka yang benar-benar dipakai saat menyimpan selalu hasil hitung server dari harga database.
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
 **21. Kenapa total dihitung ulang di `proses_transaksi.php`?**
 
@@ -1206,6 +1311,7 @@ Saat terjadi error di tengah proses, perubahan yang sudah masuk bisa tertinggal.
 
 Semua tabel lama dihapus dan dibuat baru. Data barang, transaksi, dan user lama hilang, lalu diganti data contoh. Ini berguna untuk mereset latihan.
 
+<<<<<<< HEAD
 **39. Kalau aturan diskon atau pajak ingin diubah, bagian mana yang diubah?**
 
 Cukup ubah `config/diskon.php`:
@@ -1214,6 +1320,14 @@ Cukup ubah `config/diskon.php`:
 - `$pajak_persen` menyimpan persentase pajak.
 
 File itu dipakai oleh `transaksi.php` (tampilan) dan `proses_transaksi.php` (perhitungan sah), jadi tidak perlu mencari kode perhitungan di banyak tempat. Transaksi lama tetap memakai persentase yang tersimpan di database, sehingga struk lamanya tidak berubah.
+=======
+**39. Kalau harga ingin didiskon, bagian mana yang diubah?**
+
+Ada dua cara:
+
+- Diskon permanen: ubah harga barang di `barang_edit.php`.
+- Diskon per transaksi: perlu tambahan kolom di database, input di form pembayaran `transaksi.php`, dan perhitungan wajib di `proses_transaksi.php`. Tampilan total di `assets/js/kasir.js` boleh ikut disesuaikan, tetapi angka final tetap dihitung server. Langkah lengkapnya ada di bagian 12.3.
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
 **40. Kalau ingin menambah kolom pada barang, bagaimana?**
 
@@ -1285,6 +1399,7 @@ array('kunci' => 'laporan', 'judul' => 'Laporan', 'file' => 'laporan.php'),
 
 Lalu buat file `laporan.php` dan isi `$halaman_aktif = 'laporan';` sebelum memanggil header. Menu aktif akan otomatis diberi warna berbeda.
 
+<<<<<<< HEAD
 **49. Bagaimana diskon bertingkat dan pajak 10% dihitung?**
 
 Subtotal dihitung dari `harga × jumlah` semua item. Setelah itu aturan diskon dibaca berurutan:
@@ -1314,6 +1429,8 @@ Contoh: subtotal Rp 260.000 mendapat diskon 10% = Rp 26.000. Dasar pajak Rp 234.
 
 Di browser, `assets/js/kasir.js` menampilkan angka yang sama sebagai pratinjau. Saat transaksi disimpan, `proses_transaksi.php` menghitung ulang semuanya dari harga database, sehingga angka kiriman browser tidak bisa dimanipulasi.
 
+=======
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 ---
 
 ## 12. Cara Memodifikasi Hal Umum
@@ -1469,6 +1586,7 @@ Kalau ingin memakai Bootstrap, boleh saja, tetapi aplikasi ini sengaja tidak mem
 
 ---
 
+<<<<<<< HEAD
 ### 12.3 Mengubah diskon bertingkat dan pajak
 
 Diskon bertingkat dan pajak 10% **sudah diterapkan** di aplikasi ini. Semua aturannya dikumpulkan di `config/diskon.php`, jadi tidak perlu mengubah banyak file kalau ingin menyesuaikan.
@@ -1538,6 +1656,124 @@ Persentase ikut disimpan supaya struk lama tetap benar walaupun aturan di `confi
 `struk.php` dan `riwayat.php` menampilkan subtotal, diskon (kalau lebih dari 0), pajak, lalu total akhir. Keduanya membaca angka yang tersimpan di database, bukan menghitung ulang.
 
 **Catatan penting:** `detail_transaksi.subtotal` tetap menyimpan harga asli sebelum diskon. Diskon dan pajak hanya ada di tabel `transaksi`. Kalau ingin diskon per item, kamu harus menambah kolom diskon di `detail_transaksi` dan mengubah perhitungan subtotal.
+=======
+### 12.3 Menambah diskon per transaksi
+
+Contoh yang dipakai di sini adalah **diskon nominal rupiah** (misal potongan Rp 5.000).
+Langkah ini belum diterapkan di aplikasi. Ikuti urutannya kalau ingin menambahkannya.
+
+**Langkah 1 - Tambah kolom di tabel transaksi**
+
+```sql
+ALTER TABLE transaksi
+ADD COLUMN diskon INT NOT NULL DEFAULT 0 AFTER total;
+```
+
+Tambahkan juga di `database.sql` pada bagian `CREATE TABLE transaksi`:
+
+```sql
+diskon INT NOT NULL DEFAULT 0,
+```
+
+**Langkah 2 - Tambah input di `transaksi.php`**
+
+Di dalam form pembayaran, sebelum input `bayar`, tambahkan:
+
+```html
+<div class="form-group">
+    <label for="diskon">Diskon (Rp)</label>
+    <input type="number" id="diskon" name="diskon"
+           value="0" min="0" step="1">
+    <div class="hint">Isi 0 kalau tidak ada diskon.</div>
+</div>
+```
+
+Kalau ingin angka di layar ikut berkurang saat diskon diisi, tambahkan pembacaan input diskon di `assets/js/kasir.js` dan kurangi total pada `perbaruiPembayaran()`. Ini hanya untuk tampilan. Perhitungan yang sah tetap dilakukan di server.
+
+**Langkah 3 - Baca dan validasi diskon di `proses_transaksi.php`**
+
+Setelah bagian yang membaca `$bayar`, tambahkan:
+
+```php
+$diskon = filter_var(isset($_POST['diskon']) ? $_POST['diskon'] : 0, FILTER_VALIDATE_INT);
+
+if ($diskon === false || $diskon < 0) {
+    $_SESSION['pesan']      = 'Diskon harus berupa angka bulat dan tidak boleh negatif.';
+    $_SESSION['tipe_pesan'] = 'danger';
+    header('Location: transaksi.php');
+    exit;
+}
+```
+
+Setelah total belanja selesai dihitung (setelah perulangan item), tambahkan pengecekan:
+
+```php
+if ($error === '' && $diskon > $total_belanja) {
+    $error = 'Diskon tidak boleh lebih besar dari total belanja.';
+}
+```
+
+**Langkah 4 - Ubah pengecekan bayar dan penyimpanan**
+
+Ganti bagian pengecekan `$bayar < $total_belanja` dan INSERT transaksi menjadi:
+
+```php
+$total_setelah_diskon = $total_belanja - $diskon;
+
+if ($error === '' && $bayar < $total_setelah_diskon) {
+    $error = 'Uang bayar kurang. Total setelah diskon Rp '
+           . number_format($total_setelah_diskon, 0, ',', '.') . '.';
+}
+
+if ($error === '') {
+    $kembalian = $bayar - $total_setelah_diskon;
+
+    $perintah = mysqli_prepare(
+        $koneksi,
+        'INSERT INTO transaksi (tanggal, total, diskon, bayar, kembalian)
+         VALUES (NOW(), ?, ?, ?, ?)'
+    );
+    mysqli_stmt_bind_param(
+        $perintah,
+        'iiii',
+        $total_setelah_diskon,
+        $diskon,
+        $bayar,
+        $kembalian
+    );
+    // ... sisanya sama
+}
+```
+
+Perhatikan: kolom `total` sekarang berisi total **setelah** diskon.
+
+**Langkah 5 - Tampilkan di struk**
+
+Ubah SELECT di `struk.php` agar mengambil kolom diskon:
+
+```php
+'SELECT id, tanggal, total, diskon, bayar, kembalian FROM transaksi WHERE id = ?'
+```
+
+Lalu tambahkan baris di struk sebelum Total:
+
+```html
+<div class="struk-baris">
+    <span>Subtotal</span>
+    <span>Rp <?= number_format($transaksi['total'] + $transaksi['diskon'], 0, ',', '.') ?></span>
+</div>
+<div class="struk-baris">
+    <span>Diskon</span>
+    <span>- Rp <?= number_format($transaksi['diskon'], 0, ',', '.') ?></span>
+</div>
+```
+
+**Langkah 6 - Riwayat (opsional)**
+
+Ubah SELECT di `riwayat.php` agar mengambil `diskon`, lalu tampilkan di bagian keterangan transaksi.
+
+**Catatan penting:** `detail_transaksi.subtotal` tetap menyimpan harga asli sebelum diskon. Diskon hanya mengurangi total di tabel `transaksi`. Cara ini mudah, tetapi kalau ingin diskon per item, kamu harus menambah kolom diskon di `detail_transaksi` dan mengubah perhitungan subtotal.
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
 ---
 
@@ -1648,16 +1884,23 @@ Berikut hal yang sudah diuji pada aplikasi ini:
 | 15 | Uang bayar kurang | Peringatan muncul, tombol Bayar nonaktif |
 | 16 | Simpan transaksi | Transaksi, detail, dan stok benar |
 | 17 | Kirim JSON keranjang yang dimodifikasi | Server menolak/menyesuaikan, harga tetap dari database |
+<<<<<<< HEAD
 | 18 | Struk | Subtotal, diskon, pajak, total, bayar, kembalian sesuai |
+=======
+| 18 | Struk | Total, bayar, kembalian sesuai |
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 | 19 | Riwayat + detail item | Tampil dengan benar |
 | 20 | Sidebar di HP | Tombol hamburger membuka/menutup sidebar |
 | 21 | Logout | Session hilang, kembali ke login |
 | 22 | Cek error PHP di semua halaman | Tidak ada warning/notice |
 | 23 | Cek sintaks JavaScript (`node --check`) | Tidak ada error |
+<<<<<<< HEAD
 | 24 | Diskon bertingkat di bawah Rp 100.000 | Diskon 0%, pajak 10% tetap dihitung |
 | 25 | Diskon bertingkat lintas batas (Rp 130.000) | Diskon 5%, pajak dari dasar setelah diskon |
 | 26 | Perhitungan diskon dan pajak PHP vs JavaScript | Hasilnya sama |
 | 27 | Transaksi tersimpan dengan rincian diskon/pajak | Kolom subtotal, diskon, pajak, total benar |
+=======
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
 Kalau ingin mengulang pengujian dari awal, import ulang `database.sql`.
 
@@ -1678,10 +1921,17 @@ Kalau ingin mengulang pengujian dari awal, import ulang `database.sql`.
    Tambah satu barang, lalu edit harganya. Jelaskan prepared statement dan validasi.
 
 5. **Lakukan transaksi**  
+<<<<<<< HEAD
    Buka halaman Kasir. Tunjukkan pencarian barang, klik tombol **+** pada dua barang, lalu kurangi satu item lewat tombol **−**. Tunjukkan subtotal, diskon bertingkat, pajak 10%, total, kembalian, dan tombol Bayar berubah otomatis. Pilih barang sampai subtotal melewati Rp 100.000 agar diskon 5% terlihat. Jelaskan bahwa keranjang disimpan di variabel JavaScript `keranjang`.
 
 6. **Simpan transaksi**  
    Masukkan uang bayar lebih besar dari total. Tunjukkan struk berisi subtotal, diskon, pajak, total, dan kembalian. Klik **Cetak Struk** untuk membuka print preview.
+=======
+   Buka halaman Kasir. Tunjukkan pencarian barang, klik tombol **+** pada dua barang, lalu kurangi satu item lewat tombol **−**. Tunjukkan total, kembalian, dan tombol Bayar berubah otomatis. Jelaskan bahwa keranjang disimpan di variabel JavaScript `keranjang`.
+
+6. **Simpan transaksi**  
+   Masukkan uang bayar lebih besar dari total. Tunjukkan struk dan kembalian. Klik **Cetak Struk** untuk membuka print preview.
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
 7. **Tunjukkan stok berkurang**  
    Buka Data Barang, tunjukkan stok barang yang dibeli sudah berkurang.
@@ -1698,9 +1948,14 @@ Kalau ingin mengulang pengujian dari awal, import ulang `database.sql`.
 10. **Tunjukkan kode penting**  
     - `config/koneksi.php` → koneksi database.
     - `includes/header.php` dan `assets/css/style.css` → sidebar dan tema warna.
+<<<<<<< HEAD
     - `transaksi.php` dan `assets/js/kasir.js` → keranjang di JavaScript, pratinjau diskon dan pajak.
     - `config/diskon.php` → aturan diskon bertingkat dan pajak.
     - `proses_transaksi.php` → baca JSON, hitung subtotal/diskon/pajak/total, simpan, kurangi stok, commit/rollback.
+=======
+    - `transaksi.php` dan `assets/js/kasir.js` → keranjang di JavaScript.
+    - `proses_transaksi.php` → baca JSON, hitung total, simpan, kurangi stok, commit/rollback.
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
     - `struk.php` → ambil data dan cetak.
 
 ---
@@ -1711,8 +1966,13 @@ Aplikasi ini sengaja dibuat sederhana agar mudah dipelajari. Beberapa hal yang b
 
 1. **Foto barang** — tambah kolom `gambar`, upload file, tampilkan di daftar.
 2. **Barcode** — tambah input scanner dan cari barang berdasarkan kode.
+<<<<<<< HEAD
 3. **Diskon per item** — tambah kolom diskon di `detail_transaksi`. (Diskon bertingkat per transaksi sudah ada.)
 4. **Pajak berbeda per barang** — sekarang pajak memakai satu persentase untuk seluruh transaksi. Kalau ingin PPN berbeda per jenis barang, tambah kolom pajak di `barang`.
+=======
+3. **Diskon per item** — tambah kolom diskon di `detail_transaksi`.
+4. **Pajak/PPN** — tambah kolom pajak di `transaksi` dan hitung setelah subtotal.
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 5. **Cetak thermal** — sesuaikan ukuran CSS struk dengan printer thermal 58mm/80mm.
 6. **Hak akses** — tambah kolom `role` di `users`, batasi menu barang untuk admin.
 7. **Pencatatan kasir per transaksi** — tambah kolom `id_user` di `transaksi`.
@@ -1726,7 +1986,11 @@ Aplikasi ini sengaja dibuat sederhana agar mudah dipelajari. Beberapa hal yang b
 
 Kalau ditanya "jelaskan aplikasi ini", jawab singkat:
 
+<<<<<<< HEAD
 > "Aplikasi kasir ini memakai PHP Native dan MySQL. Kasir login memakai session. Data barang disimpan di tabel `barang`. Di halaman Kasir, barang masuk ke keranjang yang disimpan di variabel JavaScript, sehingga tombol + dan − bisa langsung memperbarui total tanpa memuat ulang halaman. Subtotal otomatis mendapat diskon bertingkat (5%, 10%, atau 15% sesuai batas belanja), lalu pajak 10% dihitung dari subtotal setelah diskon. Aturan itu ada di `config/diskon.php`. Saat Bayar, keranjang dikirim sebagai JSON. `proses_transaksi.php` memeriksa ulang id, jumlah, stok, dan uang bayar, menghitung ulang subtotal, diskon, pajak, dan total dari harga database, menyimpan ke tabel `transaksi` dan `detail_transaksi`, lalu mengurangi stok. Semua proses itu memakai transaction database agar kalau gagal bisa di-rollback. Setelah itu struk bisa dicetak dari `struk.php`."
+=======
+> "Aplikasi kasir ini memakai PHP Native dan MySQL. Kasir login memakai session. Data barang disimpan di tabel `barang`. Di halaman Kasir, barang masuk ke keranjang yang disimpan di variabel JavaScript, sehingga tombol + dan − bisa langsung memperbarui total tanpa memuat ulang halaman. Saat Bayar, keranjang dikirim sebagai JSON. `proses_transaksi.php` memeriksa ulang id, jumlah, stok, dan uang bayar, menghitung total dari harga database, menyimpan ke tabel `transaksi` dan `detail_transaksi`, lalu mengurangi stok. Semua proses itu memakai transaction database agar kalau gagal bisa di-rollback. Setelah itu struk bisa dicetak dari `struk.php`."
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
 Kalau ditanya "kenapa sederhana?", jawab:
 

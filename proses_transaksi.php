@@ -20,7 +20,10 @@
 
 session_start();
 include 'config/koneksi.php';
+<<<<<<< HEAD
 include 'config/diskon.php';
+=======
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
 // Cek login.
 if (!isset($_SESSION['id_user'])) {
@@ -37,20 +40,29 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // ------------------------------------------------------------
 // 1. AMBIL DAN CEK UANG BAYAR
 // ------------------------------------------------------------
+<<<<<<< HEAD
 // Input uang bayar ditampilkan dengan titik ribuan (contoh: 100.000),
 // jadi titik dibuang dulu sebelum dicek sebagai angka.
 $bayar_mentah = trim(isset($_POST['bayar']) ? $_POST['bayar'] : '');
 $bayar_mentah = str_replace('.', '', $bayar_mentah);
 
 if ($bayar_mentah === '' || !ctype_digit($bayar_mentah)) {
+=======
+$bayar = filter_var(isset($_POST['bayar']) ? $_POST['bayar'] : '', FILTER_VALIDATE_INT);
+
+if ($bayar === false || $bayar < 0) {
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
     $_SESSION['pesan']      = 'Uang bayar harus berupa angka bulat.';
     $_SESSION['tipe_pesan'] = 'danger';
     header('Location: transaksi.php');
     exit;
 }
 
+<<<<<<< HEAD
 $bayar = (int) $bayar_mentah;
 
+=======
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 // ------------------------------------------------------------
 // 2. BACA DATA KERANJANG (JSON) DARI FORM
 // ------------------------------------------------------------
@@ -88,10 +100,17 @@ if (count($keranjang) === 0) {
 }
 
 // Variabel untuk menampung hasil perhitungan.
+<<<<<<< HEAD
 $daftar_item      = array();
 $subtotal_belanja = 0;
 $error            = '';
 $id_transaksi     = 0;
+=======
+$daftar_item   = array();
+$total_belanja = 0;
+$error         = '';
+$id_transaksi  = 0;
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
 // Mulai transaction database.
 mysqli_begin_transaction($koneksi);
@@ -131,7 +150,11 @@ foreach ($keranjang as $id_barang => $jumlah) {
     }
 
     $subtotal      = $barang['harga'] * $jumlah;
+<<<<<<< HEAD
     $subtotal_belanja = $subtotal_belanja + $subtotal;
+=======
+    $total_belanja = $total_belanja + $subtotal;
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
     // Simpan ke array sementara untuk dipakai di langkah berikutnya.
     $daftar_item[] = array(
@@ -148,6 +171,7 @@ if ($error === '' && count($daftar_item) === 0) {
 }
 
 // ------------------------------------------------------------
+<<<<<<< HEAD
 // 5. HITUNG DISKON BERTINGKAT DAN PAJAK
 // Diskon dihitung dari subtotal. Pajak dihitung dari subtotal
 // setelah diskon. Semua angka dihitung ulang di server.
@@ -171,18 +195,29 @@ if ($error === '') {
 // ------------------------------------------------------------
 if ($error === '' && $bayar < $total_belanja) {
     $error = 'Uang bayar kurang. Total yang harus dibayar Rp '
+=======
+// 5. CEK UANG BAYAR CUKUP ATAU TIDAK
+// ------------------------------------------------------------
+if ($error === '' && $bayar < $total_belanja) {
+    $error = 'Uang bayar kurang. Total belanja Rp '
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
            . number_format($total_belanja, 0, ',', '.')
            . ', uang bayar Rp ' . number_format($bayar, 0, ',', '.') . '.';
 }
 
 // ------------------------------------------------------------
+<<<<<<< HEAD
 // 7. SIMPAN KE TABEL transaksi
+=======
+// 6. SIMPAN KE TABEL transaksi
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 // ------------------------------------------------------------
 if ($error === '') {
     $kembalian = $bayar - $total_belanja;
 
     $perintah = mysqli_prepare(
         $koneksi,
+<<<<<<< HEAD
         'INSERT INTO transaksi
             (tanggal, subtotal, diskon_persen, diskon, pajak_persen, pajak, total, bayar, kembalian)
          VALUES (NOW(), ?, ?, ?, ?, ?, ?, ?, ?)'
@@ -199,6 +234,11 @@ if ($error === '') {
         $bayar,
         $kembalian
     );
+=======
+        'INSERT INTO transaksi (tanggal, total, bayar, kembalian) VALUES (NOW(), ?, ?, ?)'
+    );
+    mysqli_stmt_bind_param($perintah, 'iii', $total_belanja, $bayar, $kembalian);
+>>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
     if (mysqli_stmt_execute($perintah)) {
         // mysqli_insert_id mengambil id transaksi yang baru dibuat.
