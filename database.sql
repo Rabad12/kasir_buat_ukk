@@ -1,14 +1,20 @@
 -- ============================================================
 -- FILE: database.sql
--- APLIKASI KASIR SEDERHANA
+-- APLIKASI KASIR RESTORAN
 --
 -- Cara pakai:
 -- 1. Buka http://localhost/phpmyadmin
 -- 2. Klik tab "Import"
 -- 3. Pilih file database.sql ini, lalu klik "Import"
 --
--- File ini akan membuat database "db_kasir" beserta 4 tabel
--- dan 10 data barang contoh.
+-- File ini akan membuat database "db_kasir" beserta 4 tabel,
+-- 2 akun (admin dan kasir), dan 10 data menu restoran contoh.
+--
+-- Catatan diskon:
+-- Diskon sekarang diatur PER MENU pada kolom barang.diskon_persen.
+-- Saat transaksi, diskon dihitung otomatis per item dan disalin
+-- ke detail_transaksi (diskon_persen + diskon) agar riwayat/struk
+-- tetap menampilkan diskon yang berlaku saat itu.
 -- ============================================================
 
 -- Membuat database kalau belum ada, lalu memakainya.
@@ -27,33 +33,50 @@ DROP TABLE IF EXISTS users;
 
 -- ============================================================
 -- TABEL 1: users
--- Menyimpan akun kasir yang boleh masuk ke aplikasi.
+-- Menyimpan akun admin dan kasir yang boleh masuk ke aplikasi.
+--
+-- role = 'admin' : boleh membuka dashboard, mengelola menu,
+--                  kasir, dan riwayat.
+-- role = 'kasir' : hanya boleh membuka menu (lihat), kasir,
+--                  dan riwayat.
 -- ============================================================
 CREATE TABLE users (
     id       INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50)  NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
-    nama     VARCHAR(100) NOT NULL
+    nama     VARCHAR(100) NOT NULL,
+    role     ENUM('admin', 'kasir') NOT NULL DEFAULT 'kasir'
 ) ENGINE=InnoDB;
 
 -- ============================================================
 -- TABEL 2: barang
--- Menyimpan data barang yang dijual.
+-- Menyimpan data menu restoran yang dijual.
+--
+-- Nama tabel tetap "barang" agar kode lama tidak perlu diubah,
+-- tetapi di tampilan disebut "menu".
+--
+-- diskon_persen = diskon khusus menu ini (0-100).
+-- Contoh: 10 berarti harga menu dipotong 10% saat transaksi.
 -- ============================================================
 CREATE TABLE barang (
-    id          INT AUTO_INCREMENT PRIMARY KEY,
-    kode_barang VARCHAR(20)  NOT NULL UNIQUE,
-    nama_barang VARCHAR(100) NOT NULL,
-    harga       INT NOT NULL DEFAULT 0,
-    stok        INT NOT NULL DEFAULT 0
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    kode_barang   VARCHAR(20)  NOT NULL UNIQUE,
+    nama_barang   VARCHAR(100) NOT NULL,
+    harga         INT NOT NULL DEFAULT 0,
+    stok          INT NOT NULL DEFAULT 0,
+    diskon_persen TINYINT NOT NULL DEFAULT 0
 ) ENGINE=InnoDB;
 
 -- ============================================================
 -- TABEL 3: transaksi
 -- Menyimpan satu baris untuk setiap transaksi penjualan.
+--
+-- subtotal     = jumlah harga kotor semua menu sebelum diskon.
+-- diskon       = total diskon dari seluruh menu pada transaksi.
+-- diskon_persen= persentase diskon rata-rata (hanya informasi).
+-- pajak        = pajak dari (subtotal - diskon).
 -- ============================================================
 CREATE TABLE transaksi (
-<<<<<<< HEAD
     id            INT AUTO_INCREMENT PRIMARY KEY,
     tanggal       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     subtotal      INT NOT NULL DEFAULT 0,
@@ -64,34 +87,37 @@ CREATE TABLE transaksi (
     total         INT NOT NULL DEFAULT 0,
     bayar         INT NOT NULL DEFAULT 0,
     kembalian     INT NOT NULL DEFAULT 0
-=======
-    id        INT AUTO_INCREMENT PRIMARY KEY,
-    tanggal   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    total     INT NOT NULL DEFAULT 0,
-    bayar     INT NOT NULL DEFAULT 0,
-    kembalian INT NOT NULL DEFAULT 0
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 ) ENGINE=InnoDB;
 
 -- ============================================================
 -- TABEL 4: detail_transaksi
--- Menyimpan barang apa saja yang dibeli pada satu transaksi.
+-- Menyimpan menu apa saja yang dipesan pada satu transaksi.
 --
 -- RELASI:
 -- - id_transaksi terhubung ke transaksi.id
 -- - id_barang    terhubung ke barang.id
 --
+-- nama_item dan harga_satuan disimpan sebagai SALINAN saat transaksi.
+-- Tujuannya supaya struk lama tidak berubah kalau nama/harga menu
+-- diedit di kemudian hari.
+--
+-- subtotal = (harga_satuan x jumlah) - diskon.
+--
 -- ON DELETE CASCADE pada transaksi: kalau transaksi dihapus,
 -- rinciannya ikut terhapus.
--- ON DELETE RESTRICT pada barang: barang yang sudah dipakai
+-- ON DELETE RESTRICT pada barang: menu yang sudah dipakai
 -- di transaksi tidak boleh dihapus.
 -- ============================================================
 CREATE TABLE detail_transaksi (
-    id           INT AUTO_INCREMENT PRIMARY KEY,
-    id_transaksi INT NOT NULL,
-    id_barang    INT NOT NULL,
-    jumlah       INT NOT NULL DEFAULT 1,
-    subtotal     INT NOT NULL DEFAULT 0,
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    id_transaksi  INT NOT NULL,
+    id_barang     INT NOT NULL,
+    nama_item     VARCHAR(100) NOT NULL DEFAULT '',
+    harga_satuan  INT NOT NULL DEFAULT 0,
+    jumlah        INT NOT NULL DEFAULT 1,
+    diskon_persen TINYINT NOT NULL DEFAULT 0,
+    diskon        INT NOT NULL DEFAULT 0,
+    subtotal      INT NOT NULL DEFAULT 0,
 
     CONSTRAINT fk_detail_transaksi
         FOREIGN KEY (id_transaksi) REFERENCES transaksi(id)
@@ -103,29 +129,33 @@ CREATE TABLE detail_transaksi (
 ) ENGINE=InnoDB;
 
 -- ============================================================
--- DATA CONTOH: USER ADMIN
+-- DATA CONTOH: AKUN ADMIN DAN KASIR
 --
--- Username : admin
--- Password : admin123
+-- Admin : admin / admin123
+-- Kasir : kasir / kasir123
 --
 -- Password di bawah ini BUKAN teks biasa, melainkan hasil
 -- password_hash() dengan algoritma bcrypt. Aplikasi mengeceknya
 -- memakai password_verify().
 -- ============================================================
-INSERT INTO users (username, password, nama) VALUES
-('admin', '$2y$10$d0.iv79dXownvfc8o/HIXuAUugsha4RGFZSW6xevQ0ngRmf3OZ9we', 'Administrator');
+INSERT INTO users (username, password, nama, role) VALUES
+('admin', '$2y$10$1lOeFioYVgGh26H57g7vNu8nfa8FSW.nPNEprg53NlYfp/Xg5i59C', 'Administrator', 'admin'),
+('kasir', '$2y$10$mJqWWOu4JEnMaEEpDTFVUODKb6FKt5dQjlziOZhb.UKMVDs1i9WA.', 'Kasir', 'kasir');
 
 -- ============================================================
--- DATA CONTOH: 10 BARANG
+-- DATA CONTOH: 10 MENU RESTORAN
+-- Kode MKN = makanan, MNM = minuman.
+-- Beberapa menu sengaja diberi diskon agar fitur diskon
+-- per menu langsung terlihat saat ujian/demo.
 -- ============================================================
-INSERT INTO barang (kode_barang, nama_barang, harga, stok) VALUES
-('BRG001', 'Beras Premium 5kg',      65000, 20),
-('BRG002', 'Gula Pasir 1kg',         17000, 30),
-('BRG003', 'Minyak Goreng 1L',       19000, 25),
-('BRG004', 'Telur Ayam 1kg',         28000, 15),
-('BRG005', 'Mi Instan Goreng',        3000, 50),
-('BRG006', 'Kopi Sachet',             1500, 100),
-('BRG007', 'Air Mineral 600ml',       4000, 40),
-('BRG008', 'Sabun Mandi',             5000, 35),
-('BRG009', 'Teh Kotak 250ml',         5000, 24),
-('BRG010', 'Tepung Terigu 1kg',      13000, 18);
+INSERT INTO barang (kode_barang, nama_barang, harga, stok, diskon_persen) VALUES
+('MKN001', 'Nasi Goreng Spesial',       25000, 30,  0),
+('MKN002', 'Mie Goreng Jawa',           22000, 30,  0),
+('MKN003', 'Ayam Geprek Sambal Ijo',    28000, 25, 10),
+('MKN004', 'Nasi Ayam Bakar',           30000, 20,  0),
+('MKN005', 'Sate Ayam (10 Tusuk)',      32000, 20,  5),
+('MNM001', 'Es Teh Manis',               5000, 50,  0),
+('MNM002', 'Es Jeruk Segar',             8000, 40,  0),
+('MNM003', 'Kopi Hitam',                10000, 30,  0),
+('MNM004', 'Air Mineral 600ml',          4000, 40,  0),
+('MNM005', 'Jus Alpukat',               15000, 20, 10);

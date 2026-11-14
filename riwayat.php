@@ -1,18 +1,23 @@
 <?php
-// ============================================================
-// FILE: riwayat.php
-// TUGAS: Menampilkan daftar semua transaksi yang pernah disimpan.
-// Setiap transaksi bisa dibuka detail itemnya, atau dibuka struknya.
-// ============================================================
+/**
+ * FILE: riwayat.php
+ * TUGAS: Menampilkan daftar semua transaksi yang pernah disimpan.
+ *
+ * Setiap transaksi bisa dibuka detail pesanannya, atau dibuka
+ * struknya. Ringkasan jumlah transaksi, total pendapatan, dan
+ * rata-rata tetap dihitung dari database.
+ *
+ * Halaman ini bisa dipakai admin maupun kasir.
+ *
+ * @return void
+ */
 
 session_start();
 include 'config/koneksi.php';
+include 'config/akses.php';
 
-// Cek login.
-if (!isset($_SESSION['id_user'])) {
-    header('Location: login.php');
-    exit;
-}
+// Admin dan kasir yang sudah login boleh melihat riwayat.
+wajib_login();
 
 // ------------------------------------------------------------
 // RINGKASAN RIWAYAT
@@ -35,24 +40,20 @@ if ($jumlah_transaksi > 0) {
 // Ambil semua transaksi, yang terbaru di atas.
 $hasil_transaksi = mysqli_query(
     $koneksi,
-<<<<<<< HEAD
     'SELECT id, tanggal, subtotal, diskon_persen, diskon, pajak_persen, pajak,
             total, bayar, kembalian
      FROM transaksi ORDER BY id DESC'
-=======
-    'SELECT id, tanggal, total, bayar, kembalian FROM transaksi ORDER BY id DESC'
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 );
 
-// Siapkan perintah untuk mengambil detail item.
+// Siapkan perintah untuk mengambil detail pesanan.
 // Perintah ini dipakai berulang-ulang di dalam perulangan di bawah.
+// Nama, harga, dan diskon dibaca dari salinan di detail_transaksi.
 $perintah_detail = mysqli_prepare(
     $koneksi,
-    'SELECT d.jumlah, d.subtotal, b.nama_barang
-     FROM detail_transaksi d
-     INNER JOIN barang b ON d.id_barang = b.id
-     WHERE d.id_transaksi = ?
-     ORDER BY d.id ASC'
+    'SELECT nama_item, harga_satuan, jumlah, diskon_persen, diskon, subtotal
+     FROM detail_transaksi
+     WHERE id_transaksi = ?
+     ORDER BY id ASC'
 );
 
 $judul_halaman = 'Riwayat Transaksi';
@@ -61,14 +62,7 @@ include 'includes/header.php';
 ?>
 
 <div class="page-head">
-<<<<<<< HEAD
     <div class="muted">Semua transaksi yang tersimpan di database.</div>
-=======
-    <div>
-        <h1>Riwayat Transaksi</h1>
-        <div class="muted">Semua transaksi yang tersimpan di database.</div>
-    </div>
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
     <a class="btn btn-hijau" href="transaksi.php">+ Transaksi Baru</a>
 </div>
 
@@ -117,9 +111,8 @@ include 'includes/header.php';
 
             <!-- details = kotak yang bisa dibuka/tutup tanpa JavaScript -->
             <details>
-                <summary>Lihat detail item</summary>
+                <summary>Lihat detail pesanan</summary>
 
-<<<<<<< HEAD
                 <div class="rincian-transaksi">
                     <div class="struk-baris">
                         <span>Subtotal</span>
@@ -128,8 +121,8 @@ include 'includes/header.php';
 
                     <?php if ($transaksi['diskon'] > 0): ?>
                         <div class="struk-baris">
-                            <span>Diskon (<?= (int) $transaksi['diskon_persen'] ?>%)</span>
-                            <span>- Rp <?= number_format($transaksi['diskon'], 0, ',', '.') ?></span>
+                            <span>Diskon Menu</span>
+                            <span>&minus; Rp <?= number_format($transaksi['diskon'], 0, ',', '.') ?></span>
                         </div>
                     <?php endif; ?>
 
@@ -144,14 +137,13 @@ include 'includes/header.php';
                     </div>
                 </div>
 
-=======
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
                 <div class="table-wrapper" style="margin-top: 10px;">
                     <table>
                         <thead>
                             <tr>
-                                <th>Nama Barang</th>
-                                <th>Jumlah</th>
+                                <th>Nama Menu</th>
+                                <th>Porsi</th>
+                                <th class="text-kanan">Diskon</th>
                                 <th class="text-kanan">Subtotal</th>
                             </tr>
                         </thead>
@@ -165,8 +157,16 @@ include 'includes/header.php';
                             while ($item = mysqli_fetch_assoc($hasil_detail)):
                                 ?>
                                 <tr>
-                                    <td><?= htmlspecialchars($item['nama_barang']) ?></td>
-                                    <td><?= $item['jumlah'] ?></td>
+                                    <td><?= htmlspecialchars($item['nama_item']) ?></td>
+                                    <td><?= (int) $item['jumlah'] ?></td>
+                                    <td class="text-kanan">
+                                        <?php if ((int) $item['diskon'] > 0): ?>
+                                            <?= (int) $item['diskon_persen'] ?>%
+                                            (&minus; Rp <?= number_format($item['diskon'], 0, ',', '.') ?>)
+                                        <?php else: ?>
+                                            <span class="muted">&mdash;</span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td class="text-kanan">
                                         Rp <?= number_format($item['subtotal'], 0, ',', '.') ?>
                                     </td>

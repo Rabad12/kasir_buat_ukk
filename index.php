@@ -1,50 +1,42 @@
 <?php
-// ============================================================
-// FILE: index.php
-// TUGAS: Halaman dashboard (halaman pertama setelah login).
-<<<<<<< HEAD
-// Menampilkan ringkasan toko: grafik pendapatan, transaksi hari
-// ini, pendapatan hari ini, produk terlaris, stok menipis,
-// target penjualan, transaksi terakhir, dan daftar stok menipis.
-//
-// Catatan: semua angka diambil dari database. Kalau data kosong,
-// halaman menampilkan pesan rapi, bukan data palsu.
-=======
-// Menampilkan ringkasan: jumlah barang, jumlah transaksi,
-// total pendapatan, stok menipis, dan transaksi terakhir.
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
-// ============================================================
+/**
+ * FILE: index.php
+ * TUGAS: Halaman dashboard (halaman utama untuk admin).
+ *
+ * Menampilkan ringkasan restoran: grafik pendapatan 7 hari terakhir,
+ * transaksi hari ini, pendapatan hari ini, menu terlaris,
+ * stok menipis, target penjualan, transaksi terakhir, dan daftar
+ * stok menipis.
+ *
+ * Catatan: semua angka diambil dari database. Kalau data kosong,
+ * halaman menampilkan pesan rapi, bukan data palsu.
+ *
+ * Halaman ini hanya untuk admin. Kasir yang membukanya akan
+ * diarahkan ke halaman kasir.
+ *
+ * @return void
+ */
 
 session_start();
 include 'config/koneksi.php';
+include 'config/akses.php';
 
-// Pemeriksaan login. Kalau belum login, arahkan ke login.php.
-if (!isset($_SESSION['id_user'])) {
-    header('Location: login.php');
-    exit;
-}
+// Hanya admin yang boleh membuka dashboard.
+wajib_admin();
 
 // ------------------------------------------------------------
-// 1. Menghitung jumlah barang.
+// 1. Menghitung jumlah menu.
 // ------------------------------------------------------------
 $hasil         = mysqli_query($koneksi, 'SELECT COUNT(*) AS jumlah FROM barang');
 $data          = mysqli_fetch_assoc($hasil);
-<<<<<<< HEAD
 $jumlah_barang = (int) $data['jumlah'];
-=======
-$jumlah_barang = $data['jumlah'];
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
 // ------------------------------------------------------------
 // 2. Menghitung jumlah transaksi.
 // ------------------------------------------------------------
 $hasil            = mysqli_query($koneksi, 'SELECT COUNT(*) AS jumlah FROM transaksi');
 $data             = mysqli_fetch_assoc($hasil);
-<<<<<<< HEAD
 $jumlah_transaksi = (int) $data['jumlah'];
-=======
-$jumlah_transaksi = $data['jumlah'];
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
 // ------------------------------------------------------------
 // 3. Menghitung total pendapatan dari semua transaksi.
@@ -55,12 +47,11 @@ $hasil            = mysqli_query($koneksi, 'SELECT SUM(total) AS jumlah FROM tra
 $data             = mysqli_fetch_assoc($hasil);
 $total_pendapatan = (int) $data['jumlah'];
 
-<<<<<<< HEAD
 // Rata-rata pendapatan per transaksi (semua waktu).
 $rata_rata = ($jumlah_transaksi > 0) ? (int) ($total_pendapatan / $jumlah_transaksi) : 0;
 
 // ------------------------------------------------------------
-// 4. Mengambil barang yang stoknya 5 atau kurang.
+// 4. Mengambil menu yang stoknya 5 porsi atau kurang.
 // ------------------------------------------------------------
 $hasil_stok_menipis    = mysqli_query(
     $koneksi,
@@ -68,15 +59,6 @@ $hasil_stok_menipis    = mysqli_query(
 );
 $jumlah_stok_menipis   = mysqli_num_rows($hasil_stok_menipis);
 $persen_stok_menipis   = ($jumlah_barang > 0) ? (int) round($jumlah_stok_menipis / $jumlah_barang * 100) : 0;
-=======
-// ------------------------------------------------------------
-// 4. Mengambil barang yang stoknya 5 atau kurang.
-// ------------------------------------------------------------
-$hasil_stok_menipis = mysqli_query(
-    $koneksi,
-    'SELECT id, kode_barang, nama_barang, stok FROM barang WHERE stok <= 5 ORDER BY stok ASC'
-);
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
 // ------------------------------------------------------------
 // 5. Mengambil 5 transaksi terakhir.
@@ -86,7 +68,6 @@ $hasil_transaksi_terakhir = mysqli_query(
     'SELECT id, tanggal, total FROM transaksi ORDER BY id DESC LIMIT 5'
 );
 
-<<<<<<< HEAD
 // ------------------------------------------------------------
 // 6. Ringkasan khusus hari ini (tanggal server).
 // ------------------------------------------------------------
@@ -132,15 +113,15 @@ $data_grafik    = array('label' => $grafik_label, 'nilai' => $grafik_nilai);
 $ada_data_grafik = array_sum($grafik_nilai) > 0;
 
 // ------------------------------------------------------------
-// 8. Produk terlaris berdasarkan jumlah item yang terjual.
-// Kalau belum ada penjualan, data ini bernilai null.
+// 8. Menu terlaris berdasarkan jumlah porsi yang terjual.
+// Memakai salinan nama di detail_transaksi agar riwayat lama
+// tetap konsisten walau nama menu diubah.
 // ------------------------------------------------------------
 $hasil_terlaris = mysqli_query(
     $koneksi,
-    'SELECT b.nama_barang, SUM(d.jumlah) AS terjual
-     FROM detail_transaksi d
-     INNER JOIN barang b ON b.id = d.id_barang
-     GROUP BY b.id, b.nama_barang
+    'SELECT nama_item, SUM(jumlah) AS terjual
+     FROM detail_transaksi
+     GROUP BY nama_item
      ORDER BY terjual DESC
      LIMIT 1'
 );
@@ -150,7 +131,7 @@ $hasil_total_terjual = mysqli_query($koneksi, 'SELECT COALESCE(SUM(jumlah), 0) A
 $data_total_terjual  = mysqli_fetch_assoc($hasil_total_terjual);
 $total_item_terjual  = (int) $data_total_terjual['total'];
 
-$nama_terlaris    = $produk_terlaris ? $produk_terlaris['nama_barang'] : 'Belum ada';
+$nama_terlaris    = $produk_terlaris ? $produk_terlaris['nama_item'] : 'Belum ada';
 $jumlah_terlaris  = $produk_terlaris ? (int) $produk_terlaris['terjual'] : 0;
 $persen_terlaris  = ($total_item_terjual > 0) ? (int) round($jumlah_terlaris / $total_item_terjual * 100) : 0;
 
@@ -169,19 +150,13 @@ $persen_target = (TARGET_PENJUALAN_HARIAN > 0)
 $judul_halaman   = 'Dashboard';
 $halaman_aktif   = 'index';
 $muat_dashboard  = true;
-=======
-// Variabel untuk header: judul tab dan menu yang sedang aktif.
-$judul_halaman = 'Dashboard';
-$halaman_aktif = 'index';
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 include 'includes/header.php';
 ?>
 
 <div class="page-head">
-<<<<<<< HEAD
-    <div class="muted">Ringkasan singkat toko hari ini.</div>
+    <div class="muted">Ringkasan singkat restoran hari ini.</div>
     <div class="button-row">
-        <a class="btn btn-abu" href="barang_tambah.php">+ Tambah Barang</a>
+        <a class="btn btn-abu" href="barang_tambah.php">+ Tambah Menu</a>
         <a class="btn btn-biru" href="transaksi.php">Mulai Transaksi</a>
     </div>
 </div>
@@ -263,13 +238,13 @@ include 'includes/header.php';
             </div>
             <span class="badge badge-biru"><?= $persen_terlaris ?>%</span>
         </div>
-        <h3>Produk Terlaris</h3>
+        <h3>Menu Terlaris</h3>
         <div class="nilai-kecil"><?= htmlspecialchars($nama_terlaris) ?></div>
         <div class="catatan-kecil">
-            <?= $jumlah_terlaris > 0 ? $jumlah_terlaris . ' item terjual' : 'Belum ada penjualan' ?>
+            <?= $jumlah_terlaris > 0 ? $jumlah_terlaris . ' porsi terjual' : 'Belum ada penjualan' ?>
         </div>
         <div class="bilah-progress"><span style="width: <?= $persen_terlaris ?>%"></span></div>
-        <div class="catatan-kecil">Bagian dari seluruh item yang terjual.</div>
+        <div class="catatan-kecil">Bagian dari seluruh porsi yang terjual.</div>
     </article>
 
     <article class="kartu-kecil">
@@ -285,8 +260,8 @@ include 'includes/header.php';
             <span class="badge badge-biru"><?= $jumlah_stok_menipis === 0 ? 'Aman' : 'Cek stok' ?></span>
         </div>
         <h3>Stok Menipis</h3>
-        <div class="nilai-kecil"><?= $jumlah_stok_menipis ?> barang</div>
-        <div class="catatan-kecil">Stok 5 atau kurang dari <?= $jumlah_barang ?> produk.</div>
+        <div class="nilai-kecil"><?= $jumlah_stok_menipis ?> menu</div>
+        <div class="catatan-kecil">Stok 5 porsi atau kurang dari <?= $jumlah_barang ?> menu.</div>
         <div class="bilah-progress"><span style="width: <?= $persen_stok_menipis ?>%"></span></div>
         <div class="catatan-kecil">
             <?= $jumlah_stok_menipis === 0 ? 'Semua stok masih aman.' : 'Segera lakukan penambahan stok.' ?>
@@ -352,7 +327,7 @@ include 'includes/header.php';
         </div>
 
         <?php if ($jumlah_stok_menipis === 0): ?>
-            <p class="empty-ringkas">Semua stok barang masih aman.</p>
+            <p class="empty-ringkas">Semua stok menu masih aman.</p>
         <?php else: ?>
             <div class="daftar-ringkas">
                 <?php while ($barang = mysqli_fetch_assoc($hasil_stok_menipis)): ?>
@@ -375,111 +350,4 @@ include 'includes/header.php';
 <!-- Data grafik dikirim sebagai JSON, bukan ditulis sebagai kode JavaScript. -->
 <script type="application/json" id="data-grafik"><?= json_encode($data_grafik, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
 
-=======
-    <div>
-        <h1>Dashboard</h1>
-        <div class="muted">Ringkasan singkat toko hari ini.</div>
-    </div>
-    <div class="button-row">
-        <a class="btn btn-biru" href="barang_tambah.php">+ Tambah Barang</a>
-        <a class="btn btn-hijau" href="transaksi.php">Mulai Transaksi</a>
-    </div>
-</div>
-
-<!-- ==================== KARTU RINGKASAN ==================== -->
-<div class="grid-3">
-    <div class="stat-card">
-        <div class="label">Jumlah Barang</div>
-        <div class="nilai"><?= $jumlah_barang ?></div>
-    </div>
-
-    <div class="stat-card">
-        <div class="label">Jumlah Transaksi</div>
-        <div class="nilai"><?= $jumlah_transaksi ?></div>
-    </div>
-
-    <div class="stat-card">
-        <div class="label">Total Pendapatan</div>
-        <div class="nilai">Rp <?= number_format($total_pendapatan, 0, ',', '.') ?></div>
-    </div>
-</div>
-
-<div class="grid-2">
-    <!-- ==================== STOK MENIPIS ==================== -->
-    <div class="card">
-        <h2>Stok Menipis (5 atau kurang)</h2>
-
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Kode</th>
-                        <th>Nama Barang</th>
-                        <th>Stok</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (mysqli_num_rows($hasil_stok_menipis) === 0): ?>
-                        <tr>
-                            <td colspan="4" class="empty">Semua stok barang masih aman.</td>
-                        </tr>
-                    <?php else: ?>
-                        <?php while ($barang = mysqli_fetch_assoc($hasil_stok_menipis)): ?>
-                            <tr>
-                                <td><?= htmlspecialchars($barang['kode_barang']) ?></td>
-                                <td><?= htmlspecialchars($barang['nama_barang']) ?></td>
-                                <td><span class="badge badge-merah"><?= $barang['stok'] ?></span></td>
-                                <td>
-                                    <a class="btn btn-abu btn-kecil"
-                                       href="barang_edit.php?id=<?= $barang['id'] ?>">Edit</a>
-                                </td>
-                            </tr>
-                        <?php endwhile; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- ==================== TRANSAKSI TERAKHIR ==================== -->
-    <div class="card">
-        <h2>Transaksi Terakhir</h2>
-
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>No.</th>
-                        <th>Tanggal</th>
-                        <th class="text-kanan">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (mysqli_num_rows($hasil_transaksi_terakhir) === 0): ?>
-                        <tr>
-                            <td colspan="3" class="empty">Belum ada transaksi.</td>
-                        </tr>
-                    <?php else: ?>
-                        <?php while ($transaksi = mysqli_fetch_assoc($hasil_transaksi_terakhir)): ?>
-                            <tr>
-                                <td>
-                                    <a href="struk.php?id=<?= $transaksi['id'] ?>">
-                                        #<?= $transaksi['id'] ?>
-                                    </a>
-                                </td>
-                                <td><?= date('d-m-Y H:i', strtotime($transaksi['tanggal'])) ?></td>
-                                <td class="text-kanan">
-                                    Rp <?= number_format($transaksi['total'], 0, ',', '.') ?>
-                                </td>
-                            </tr>
-                        <?php endwhile; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 <?php include 'includes/footer.php'; ?>

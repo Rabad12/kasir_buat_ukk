@@ -1,12 +1,12 @@
-/* ============================================================
-   FILE: assets/js/pencarian_global.js
-   TUGAS: Menyaring isi tabel di halaman yang sedang dibuka
-   memakai kolom pencarian pada header.
-
-   Pencarian ini HANYA menyembunyikan/menampilkan baris yang sudah
-   ada di halaman. Tidak ada query baru ke database dan tidak ada
-   data yang diubah.
-   ============================================================ */
+/**
+ * FILE: assets/js/pencarian_global.js
+ * TUGAS: Menyaring isi tabel di halaman yang sedang dibuka
+ * memakai kolom pencarian pada header.
+ *
+ * Pencarian ini HANYA menyembunyikan/menampilkan baris yang sudah
+ * ada di halaman. Tidak ada query baru ke database dan tidak ada
+ * data yang diubah.
+ */
 
 /**
  * Mengambil teks sebuah baris tabel dalam huruf kecil.

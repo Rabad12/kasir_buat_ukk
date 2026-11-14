@@ -1,15 +1,15 @@
-/* ============================================================
-   FILE: assets/js/sidebar.js
-   TUGAS: Mengatur buka/tutup sidebar kapsul di layar HP dan tablet.
-
-   Cara kerja:
-   1. Tombol hamburger menambah class "terbuka" pada sidebar.
-   2. Overlay gelap ditampilkan bersamaan.
-   3. Klik overlay atau tombol Escape menutup sidebar kembali.
-
-   File ini hanya mengubah class CSS. Tampilan tetap diatur di
-   assets/css/tema-kasir.css.
-   ============================================================ */
+/**
+ * FILE: assets/js/sidebar.js
+ * TUGAS: Mengatur buka/tutup sidebar kapsul di layar HP dan tablet.
+ *
+ * Cara kerja:
+ * 1. Tombol hamburger menambah class "terbuka" pada sidebar.
+ * 2. Overlay gelap ditampilkan bersamaan.
+ * 3. Klik overlay atau tombol Escape menutup sidebar kembali.
+ *
+ * File ini hanya mengubah class CSS. Tampilan tetap diatur di
+ * assets/css/tema-kasir.css.
+ */
 
 /**
  * Menutup sidebar dan menyembunyikan lapisan gelap.

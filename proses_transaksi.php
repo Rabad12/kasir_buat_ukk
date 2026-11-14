@@ -1,7 +1,7 @@
 <?php
 // ============================================================
 // FILE: proses_transaksi.php
-// TUGAS: Menyimpan transaksi dari keranjang ke database.
+// TUGAS: Menyimpan pesanan dari keranjang ke database.
 //
 // Data keranjang dikirim dari halaman kasir dalam bentuk JSON
 // lewat input tersembunyi "data_keranjang", contoh:
@@ -9,27 +9,25 @@
 //
 // File ini TIDAK mempercayai data dari browser:
 // 1. JSON dicek dan dibersihkan.
-// 2. Harga dan stok diambil ulang dari database.
-// 3. Uang bayar dicek ulang.
-// 4. Baru kemudian disimpan ke tabel transaksi dan detail_transaksi.
+// 2. Harga, diskon, dan stok diambil ulang dari database.
+// 3. Diskon tiap menu dihitung ulang di server.
+// 4. Uang bayar dicek ulang.
+// 5. Baru kemudian disimpan ke tabel transaksi dan detail_transaksi.
 //
 // Semua langkah penyimpanan dibungkus "transaction" database:
 // kalau salah satu gagal, semuanya dibatalkan (rollback).
 // Jadi stok tidak akan berkurang kalau transaksi gagal disimpan.
+//
+// Halaman ini bisa dipakai admin maupun kasir.
 // ============================================================
 
 session_start();
 include 'config/koneksi.php';
-<<<<<<< HEAD
 include 'config/diskon.php';
-=======
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
+include 'config/akses.php';
 
-// Cek login.
-if (!isset($_SESSION['id_user'])) {
-    header('Location: login.php');
-    exit;
-}
+// Admin dan kasir yang sudah login boleh menyimpan transaksi.
+wajib_login();
 
 // File ini hanya boleh dijalankan dari form (metode POST).
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -38,39 +36,30 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // ------------------------------------------------------------
-// 1. AMBIL DAN CEK UANG BAYAR
+// 1. BACA DAN CEK UANG BAYAR
 // ------------------------------------------------------------
-<<<<<<< HEAD
 // Input uang bayar ditampilkan dengan titik ribuan (contoh: 100.000),
 // jadi titik dibuang dulu sebelum dicek sebagai angka.
 $bayar_mentah = trim(isset($_POST['bayar']) ? $_POST['bayar'] : '');
 $bayar_mentah = str_replace('.', '', $bayar_mentah);
 
 if ($bayar_mentah === '' || !ctype_digit($bayar_mentah)) {
-=======
-$bayar = filter_var(isset($_POST['bayar']) ? $_POST['bayar'] : '', FILTER_VALIDATE_INT);
-
-if ($bayar === false || $bayar < 0) {
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
     $_SESSION['pesan']      = 'Uang bayar harus berupa angka bulat.';
     $_SESSION['tipe_pesan'] = 'danger';
     header('Location: transaksi.php');
     exit;
 }
 
-<<<<<<< HEAD
 $bayar = (int) $bayar_mentah;
 
-=======
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 // ------------------------------------------------------------
 // 2. BACA DATA KERANJANG (JSON) DARI FORM
 // ------------------------------------------------------------
-$data_keranjang = isset($_POST['data_keranjang']) ? $_POST['data_keranjang'] : '';
+$data_keranjang   = isset($_POST['data_keranjang']) ? $_POST['data_keranjang'] : '';
 $keranjang_mentah = json_decode($data_keranjang, true);
 
 if (!is_array($keranjang_mentah) || count($keranjang_mentah) === 0) {
-    $_SESSION['pesan']      = 'Keranjang masih kosong. Pilih barang terlebih dahulu.';
+    $_SESSION['pesan']      = 'Keranjang masih kosong. Pilih menu terlebih dahulu.';
     $_SESSION['tipe_pesan'] = 'danger';
     header('Location: transaksi.php');
     exit;
@@ -78,7 +67,7 @@ if (!is_array($keranjang_mentah) || count($keranjang_mentah) === 0) {
 
 // ------------------------------------------------------------
 // 3. BERSIHKAN DATA KERANJANG
-// Hanya id barang (angka positif) dan jumlah (minimal 1) yang
+// Hanya id menu (angka positif) dan jumlah (minimal 1) yang
 // dipakai. Data aneh dari browser otomatis dibuang.
 // ------------------------------------------------------------
 $keranjang = array();
@@ -93,30 +82,27 @@ foreach ($keranjang_mentah as $id_barang => $jumlah) {
 }
 
 if (count($keranjang) === 0) {
-    $_SESSION['pesan']      = 'Tidak ada barang yang bisa disimpan.';
+    $_SESSION['pesan']      = 'Tidak ada menu yang bisa disimpan.';
     $_SESSION['tipe_pesan'] = 'danger';
     header('Location: transaksi.php');
     exit;
 }
 
 // Variabel untuk menampung hasil perhitungan.
-<<<<<<< HEAD
 $daftar_item      = array();
 $subtotal_belanja = 0;
+$total_diskon     = 0;
 $error            = '';
 $id_transaksi     = 0;
-=======
-$daftar_item   = array();
-$total_belanja = 0;
-$error         = '';
-$id_transaksi  = 0;
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
 // Mulai transaction database.
 mysqli_begin_transaction($koneksi);
 
 // ------------------------------------------------------------
-// 4. HITUNG ULANG SEMUA ITEM MENGGUNAKAN HARGA DARI DATABASE
+// 4. HITUNG ULANG SEMUA ITEM MENGGUNAKAN HARGA DAN DISKON DB
+// Setiap menu punya diskon sendiri (barang.diskon_persen).
+// Nilai diskon dan subtotal disalin ke detail_transaksi supaya
+// struk lama tetap benar walau menu diedit kemudian.
 // ------------------------------------------------------------
 foreach ($keranjang as $id_barang => $jumlah) {
     $id_barang = (int) $id_barang;
@@ -126,11 +112,12 @@ foreach ($keranjang as $id_barang => $jumlah) {
         continue;
     }
 
-    // FOR UPDATE mengunci baris barang sebentar, supaya stok tidak
+    // FOR UPDATE mengunci baris menu sebentar, supaya stok tidak
     // diubah oleh proses lain saat transaksi ini sedang berjalan.
     $perintah = mysqli_prepare(
         $koneksi,
-        'SELECT id, nama_barang, harga, stok FROM barang WHERE id = ? FOR UPDATE'
+        'SELECT id, nama_barang, harga, stok, diskon_persen
+         FROM barang WHERE id = ? FOR UPDATE'
     );
     mysqli_stmt_bind_param($perintah, 'i', $id_barang);
     mysqli_stmt_execute($perintah);
@@ -138,7 +125,7 @@ foreach ($keranjang as $id_barang => $jumlah) {
     $barang = mysqli_fetch_assoc($hasil);
 
     if (!$barang) {
-        $error = 'Ada barang di keranjang yang sudah dihapus dari database.';
+        $error = 'Ada menu di keranjang yang sudah dihapus dari database.';
         break;
     }
 
@@ -149,43 +136,49 @@ foreach ($keranjang as $id_barang => $jumlah) {
         break;
     }
 
-    $subtotal      = $barang['harga'] * $jumlah;
-<<<<<<< HEAD
-    $subtotal_belanja = $subtotal_belanja + $subtotal;
-=======
-    $total_belanja = $total_belanja + $subtotal;
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
+    // Hitung harga kotor, diskon menu, dan subtotal bersih per item.
+    $rincian = hitung_diskon_item(
+        $barang['harga'],
+        $jumlah,
+        $barang['diskon_persen']
+    );
+
+    $subtotal_belanja = $subtotal_belanja + $rincian['kotor'];
+    $total_diskon     = $total_diskon + $rincian['diskon'];
 
     // Simpan ke array sementara untuk dipakai di langkah berikutnya.
     $daftar_item[] = array(
-        'id_barang'   => $barang['id'],
-        'nama_barang' => $barang['nama_barang'],
-        'jumlah'      => $jumlah,
-        'subtotal'    => $subtotal,
+        'id_barang'     => $barang['id'],
+        'nama_item'     => $barang['nama_barang'],
+        'harga_satuan'  => (int) $barang['harga'],
+        'jumlah'        => $jumlah,
+        'diskon_persen' => (int) $barang['diskon_persen'],
+        'diskon'        => $rincian['diskon'],
+        'subtotal'      => $rincian['subtotal'],
     );
 }
 
 // Kalau keranjang ternyata tidak berisi item yang valid.
 if ($error === '' && count($daftar_item) === 0) {
-    $error = 'Tidak ada barang yang bisa disimpan.';
+    $error = 'Tidak ada menu yang bisa disimpan.';
 }
 
 // ------------------------------------------------------------
-<<<<<<< HEAD
-// 5. HITUNG DISKON BERTINGKAT DAN PAJAK
-// Diskon dihitung dari subtotal. Pajak dihitung dari subtotal
-// setelah diskon. Semua angka dihitung ulang di server.
+// 5. HITUNG DISKON TOTAL DAN PAJAK
+// Diskon diambil dari jumlah diskon tiap menu. Pajak dihitung
+// dari subtotal setelah diskon. Semua dihitung ulang di server.
 // ------------------------------------------------------------
 $diskon_persen = 0;
-$diskon        = 0;
 $pajak         = 0;
 $total_belanja = 0;
 
 if ($error === '') {
-    $diskon_persen = cari_persen_diskon($subtotal_belanja, $diskon_bertingkat);
-    $diskon        = hitung_nilai_diskon($subtotal_belanja, $diskon_persen);
+    // Persentase rata-rata hanya untuk informasi di struk/riwayat.
+    if ($subtotal_belanja > 0) {
+        $diskon_persen = (int) round($total_diskon / $subtotal_belanja * 100);
+    }
 
-    $dasar_pajak   = $subtotal_belanja - $diskon;
+    $dasar_pajak   = $subtotal_belanja - $total_diskon;
     $pajak         = hitung_nilai_pajak($dasar_pajak, $pajak_persen);
     $total_belanja = $dasar_pajak + $pajak;
 }
@@ -195,29 +188,18 @@ if ($error === '') {
 // ------------------------------------------------------------
 if ($error === '' && $bayar < $total_belanja) {
     $error = 'Uang bayar kurang. Total yang harus dibayar Rp '
-=======
-// 5. CEK UANG BAYAR CUKUP ATAU TIDAK
-// ------------------------------------------------------------
-if ($error === '' && $bayar < $total_belanja) {
-    $error = 'Uang bayar kurang. Total belanja Rp '
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
            . number_format($total_belanja, 0, ',', '.')
            . ', uang bayar Rp ' . number_format($bayar, 0, ',', '.') . '.';
 }
 
 // ------------------------------------------------------------
-<<<<<<< HEAD
 // 7. SIMPAN KE TABEL transaksi
-=======
-// 6. SIMPAN KE TABEL transaksi
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 // ------------------------------------------------------------
 if ($error === '') {
     $kembalian = $bayar - $total_belanja;
 
     $perintah = mysqli_prepare(
         $koneksi,
-<<<<<<< HEAD
         'INSERT INTO transaksi
             (tanggal, subtotal, diskon_persen, diskon, pajak_persen, pajak, total, bayar, kembalian)
          VALUES (NOW(), ?, ?, ?, ?, ?, ?, ?, ?)'
@@ -227,18 +209,13 @@ if ($error === '') {
         'iiiiiiii',
         $subtotal_belanja,
         $diskon_persen,
-        $diskon,
+        $total_diskon,
         $pajak_persen,
         $pajak,
         $total_belanja,
         $bayar,
         $kembalian
     );
-=======
-        'INSERT INTO transaksi (tanggal, total, bayar, kembalian) VALUES (NOW(), ?, ?, ?)'
-    );
-    mysqli_stmt_bind_param($perintah, 'iii', $total_belanja, $bayar, $kembalian);
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
     if (mysqli_stmt_execute($perintah)) {
         // mysqli_insert_id mengambil id transaksi yang baru dibuat.
@@ -249,22 +226,29 @@ if ($error === '') {
 }
 
 // ------------------------------------------------------------
-// 7. SIMPAN DETAIL DAN KURANGI STOK
+// 8. SIMPAN DETAIL DAN KURANGI STOK
 // ------------------------------------------------------------
 if ($error === '' && $id_transaksi > 0) {
     foreach ($daftar_item as $item) {
-        // Simpan satu baris rincian barang.
+        // Simpan satu baris rincian pesanan beserta salinan
+        // nama, harga, dan diskon saat transaksi berlangsung.
         $perintah = mysqli_prepare(
             $koneksi,
-            'INSERT INTO detail_transaksi (id_transaksi, id_barang, jumlah, subtotal)
-             VALUES (?, ?, ?, ?)'
+            'INSERT INTO detail_transaksi
+                (id_transaksi, id_barang, nama_item, harga_satuan,
+                 jumlah, diskon_persen, diskon, subtotal)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
         );
         mysqli_stmt_bind_param(
             $perintah,
-            'iiii',
+            'iisiiiii',
             $id_transaksi,
             $item['id_barang'],
+            $item['nama_item'],
+            $item['harga_satuan'],
             $item['jumlah'],
+            $item['diskon_persen'],
+            $item['diskon'],
             $item['subtotal']
         );
 
@@ -273,7 +257,7 @@ if ($error === '' && $id_transaksi > 0) {
             break;
         }
 
-        // Kurangi stok barang sesuai jumlah yang dibeli.
+        // Kurangi stok porsi sesuai jumlah yang dipesan.
         $perintah = mysqli_prepare(
             $koneksi,
             'UPDATE barang SET stok = stok - ? WHERE id = ?'
@@ -281,14 +265,14 @@ if ($error === '' && $id_transaksi > 0) {
         mysqli_stmt_bind_param($perintah, 'ii', $item['jumlah'], $item['id_barang']);
 
         if (!mysqli_stmt_execute($perintah)) {
-            $error = 'Stok barang gagal diperbarui.';
+            $error = 'Stok menu gagal diperbarui.';
             break;
         }
     }
 }
 
 // ------------------------------------------------------------
-// 8. SELESAIKAN TRANSAKSI
+// 9. SELESAIKAN TRANSAKSI
 // ------------------------------------------------------------
 if ($error === '') {
     // Semua berhasil: simpan permanen.

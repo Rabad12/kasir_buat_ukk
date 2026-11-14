@@ -864,7 +864,6 @@ tbody tr:last-child td {
     border-top: 2px dashed var(--garis);
 }
 
-<<<<<<< HEAD
 .baris-ringkasan {
     display: flex;
     align-items: center;
@@ -885,8 +884,6 @@ tbody tr:last-child td {
     font-weight: 700;
 }
 
-=======
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 .baris-total {
     display: flex;
     align-items: center;
@@ -1000,7 +997,6 @@ tbody tr:last-child td {
     font-weight: 700;
 }
 
-<<<<<<< HEAD
 .rincian-transaksi {
     margin: 12px 0;
     padding: 12px 14px;
@@ -1009,8 +1005,6 @@ tbody tr:last-child td {
     background: var(--putih);
 }
 
-=======
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 details summary {
     margin-top: 12px;
     color: var(--biru-sedang);

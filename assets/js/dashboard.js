@@ -1,15 +1,15 @@
-/* ============================================================
-   FILE: assets/js/dashboard.js
-   TUGAS: Menggambar grafik pendapatan 7 hari terakhir di dashboard.
-
-   Data grafik dikirim oleh PHP dalam tag <script type="application/json"
-   id="data-grafik">. File ini membacanya, lalu memakai Chart.js
-   (dimuat lewat CDN di includes/footer.php).
-
-   Kalau Chart.js gagal dimuat (misalnya tidak ada internet), grafik
-   tidak dipaksa tampil. Pesan cadangan yang sudah disiapkan di
-   halaman akan ditampilkan.
-   ============================================================ */
+/**
+ * FILE: assets/js/dashboard.js
+ * TUGAS: Menggambar grafik pendapatan 7 hari terakhir di dashboard.
+ *
+ * Data grafik dikirim oleh PHP dalam tag <script type="application/json"
+ * id="data-grafik">. File ini membacanya, lalu memakai Chart.js
+ * (dimuat lewat CDN di includes/footer.php).
+ *
+ * Kalau Chart.js gagal dimuat (misalnya tidak ada internet), grafik
+ * tidak dipaksa tampil. Pesan cadangan yang sudah disiapkan di
+ * halaman akan ditampilkan.
+ */
 
 /**
  * Mengubah angka menjadi teks rupiah singkat.

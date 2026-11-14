@@ -1,21 +1,24 @@
 <?php
-// ============================================================
-// FILE: struk.php
-// TUGAS: Menampilkan struk/nota dari satu transaksi.
-// Halaman ini bisa dicetak dengan tombol "Cetak Struk".
-//
-// Data diambil dari tabel transaksi dan detail_transaksi,
-// jadi struk lama tetap bisa dibuka kapan saja.
-// ============================================================
+/**
+ * FILE: struk.php
+ * TUGAS: Menampilkan struk/nota dari satu transaksi.
+ *
+ * Halaman ini bisa dicetak dengan tombol "Cetak Struk".
+ * Data diambil dari tabel transaksi dan detail_transaksi, jadi
+ * struk lama tetap bisa dibuka kapan saja. Aturan cetak tetap
+ * dipertahankan pada tema baru.
+ *
+ * Halaman ini bisa dipakai admin maupun kasir.
+ *
+ * @return void
+ */
 
 session_start();
 include 'config/koneksi.php';
+include 'config/akses.php';
 
-// Cek login.
-if (!isset($_SESSION['id_user'])) {
-    header('Location: login.php');
-    exit;
-}
+// Admin dan kasir yang sudah login boleh melihat struk.
+wajib_login();
 
 // Ambil id transaksi dari alamat, contoh: struk.php?id=5
 $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
@@ -32,13 +35,9 @@ if ($id <= 0) {
 // ------------------------------------------------------------
 $perintah = mysqli_prepare(
     $koneksi,
-<<<<<<< HEAD
     'SELECT id, tanggal, subtotal, diskon_persen, diskon, pajak_persen, pajak,
             total, bayar, kembalian
      FROM transaksi WHERE id = ?'
-=======
-    'SELECT id, tanggal, total, bayar, kembalian FROM transaksi WHERE id = ?'
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 );
 mysqli_stmt_bind_param($perintah, 'i', $id);
 mysqli_stmt_execute($perintah);
@@ -53,16 +52,16 @@ if (!$transaksi) {
 }
 
 // ------------------------------------------------------------
-// AMBIL RINCIAN BARANG DARI TRANSAKSI TERSEBUT
-// JOIN dipakai untuk mengambil nama barang dari tabel barang.
+// AMBIL RINCIAN PESANAN DARI TRANSAKSI TERSEBUT
+// Nama, harga, dan diskon dibaca dari salinan di detail_transaksi
+// supaya struk lama tidak berubah walau menu diedit.
 // ------------------------------------------------------------
 $perintah = mysqli_prepare(
     $koneksi,
-    'SELECT d.jumlah, d.subtotal, b.nama_barang
-     FROM detail_transaksi d
-     INNER JOIN barang b ON d.id_barang = b.id
-     WHERE d.id_transaksi = ?
-     ORDER BY d.id ASC'
+    'SELECT nama_item, harga_satuan, jumlah, diskon_persen, diskon, subtotal
+     FROM detail_transaksi
+     WHERE id_transaksi = ?
+     ORDER BY id ASC'
 );
 mysqli_stmt_bind_param($perintah, 'i', $id);
 mysqli_stmt_execute($perintah);
@@ -75,14 +74,7 @@ include 'includes/header.php';
 
 <!-- Bagian judul dan tombol tidak ikut tercetak (class no-print). -->
 <div class="page-head no-print">
-<<<<<<< HEAD
     <div class="muted">Nota nomor #<?= $transaksi['id'] ?>.</div>
-=======
-    <div>
-        <h1>Struk Transaksi</h1>
-        <div class="muted">Nota nomor #<?= $transaksi['id'] ?>.</div>
-    </div>
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
     <div class="button-row">
         <button type="button" class="btn btn-hijau" onclick="window.print()">Cetak Struk</button>
         <a class="btn btn-abu" href="riwayat.php">Riwayat</a>
@@ -93,7 +85,7 @@ include 'includes/header.php';
 <!-- ==================== KERTAS STRUK ==================== -->
 <div class="struk">
     <div class="struk-judul">
-        <strong>KASIR</strong><br>
+        <strong>KASIR RESTORAN</strong><br>
         <span class="muted">Jl. Contoh Raya No. 1, Jakarta</span>
     </div>
 
@@ -114,18 +106,22 @@ include 'includes/header.php';
 
     <hr class="struk-garis">
 
-    <!-- Daftar barang yang dibeli -->
+    <!-- Daftar menu yang dipesan -->
     <?php while ($item = mysqli_fetch_assoc($hasil_detail)): ?>
-        <?php
-        // Harga satuan didapat dari subtotal dibagi jumlah.
-        $harga_satuan = (int) ($item['subtotal'] / $item['jumlah']);
-        ?>
         <div class="struk-item">
             <div class="nama">
-                <?= htmlspecialchars($item['nama_barang']) ?><br>
+                <?= htmlspecialchars($item['nama_item']) ?><br>
                 <span class="muted">
-                    <?= $item['jumlah'] ?> x Rp <?= number_format($harga_satuan, 0, ',', '.') ?>
+                    <?= (int) $item['jumlah'] ?> x
+                    Rp <?= number_format($item['harga_satuan'], 0, ',', '.') ?>
                 </span>
+                <?php if ((int) $item['diskon'] > 0): ?>
+                    <br>
+                    <span class="muted">
+                        Diskon <?= (int) $item['diskon_persen'] ?>%
+                        (&minus; Rp <?= number_format($item['diskon'], 0, ',', '.') ?>)
+                    </span>
+                <?php endif; ?>
             </div>
             <div>Rp <?= number_format($item['subtotal'], 0, ',', '.') ?></div>
         </div>
@@ -134,15 +130,14 @@ include 'includes/header.php';
     <hr class="struk-garis">
 
     <div class="struk-baris">
-<<<<<<< HEAD
         <span>Subtotal</span>
         <span>Rp <?= number_format($transaksi['subtotal'], 0, ',', '.') ?></span>
     </div>
 
     <?php if ($transaksi['diskon'] > 0): ?>
         <div class="struk-baris">
-            <span>Diskon (<?= (int) $transaksi['diskon_persen'] ?>%)</span>
-            <span>- Rp <?= number_format($transaksi['diskon'], 0, ',', '.') ?></span>
+            <span>Diskon Menu</span>
+            <span>&minus; Rp <?= number_format($transaksi['diskon'], 0, ',', '.') ?></span>
         </div>
     <?php endif; ?>
 
@@ -152,8 +147,6 @@ include 'includes/header.php';
     </div>
 
     <div class="struk-baris">
-=======
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
         <strong>Total</strong>
         <strong>Rp <?= number_format($transaksi['total'], 0, ',', '.') ?></strong>
     </div>
@@ -169,8 +162,8 @@ include 'includes/header.php';
     <hr class="struk-garis">
 
     <div class="struk-terima">
-        Terima kasih telah berbelanja.<br>
-        Barang yang sudah dibeli tidak dapat ditukar.
+        Terima kasih atas kunjungan Anda.<br>
+        Pesanan yang sudah dibuat tidak dapat dibatalkan.
     </div>
 </div>
 

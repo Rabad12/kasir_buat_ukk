@@ -1,27 +1,27 @@
 <?php
-// ============================================================
-// FILE: includes/header.php
-// TUGAS: Menampilkan bagian atas semua halaman, yaitu:
-<<<<<<< HEAD
-//   - pemuatan font Google dan file CSS tema
-//   - sidebar kapsul melayang di sisi kiri
-//   - header halaman: label "Primary", judul, pencarian, avatar
-=======
-//   - pemanggilan file CSS (assets/css/style.css)
-//   - sidebar menu di sisi kiri
-//   - tombol hamburger untuk layar HP
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
-//   - kotak pesan sukses/error
-//
-// Setiap halaman yang memakai file ini harus sudah menjalankan
-// session_start() dan sudah mengecek status login.
-// ============================================================
+/**
+ * FILE: includes/header.php
+ * TUGAS: Menampilkan bagian atas semua halaman.
+ *
+ * Bagian yang dibuat:
+ * - pemuatan font Google dan file CSS tema,
+ * - sidebar kapsul melayang di sisi kiri,
+ * - menu sidebar yang menyesuaikan role admin/kasir,
+ * - header halaman: label "Restoran", judul, pencarian, role, avatar,
+ * - kotak pesan sukses/error.
+ *
+ * Setiap halaman yang memakai file ini harus sudah menjalankan
+ * session_start() dan sudah mengecek status login.
+ *
+ * @return void
+ */
+
+require_once __DIR__ . '/../config/akses.php';
 
 // Nilai bawaan kalau halaman tidak mengisi variabel ini.
-$judul_halaman = isset($judul_halaman) ? $judul_halaman : 'Aplikasi Kasir';
+$judul_halaman = isset($judul_halaman) ? $judul_halaman : 'Kasir Restoran';
 $halaman_aktif = isset($halaman_aktif) ? $halaman_aktif : '';
 
-<<<<<<< HEAD
 /**
  * Membuat inisial nama pengguna untuk ditampilkan di avatar bulat.
  *
@@ -50,6 +50,8 @@ function buat_inisial($nama) {
 
 $nama_pengguna    = isset($_SESSION['nama']) ? $_SESSION['nama'] : 'Kasir';
 $inisial_pengguna = buat_inisial($nama_pengguna);
+$peran_pengguna   = label_peran();
+$beranda          = halaman_utama();
 
 // Ikon menu dibuat sebagai SVG sederhana supaya tidak perlu file gambar.
 $ikon_dasbor = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="2"></rect><rect x="14" y="3" width="7" height="7" rx="2"></rect><rect x="3" y="14" width="7" height="7" rx="2"></rect><rect x="14" y="14" width="7" height="7" rx="2"></rect></svg>';
@@ -62,19 +64,18 @@ $ikon_keluar = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 // menulis ulang kode HTML untuk setiap menu.
 $menu_sidebar = array(
     array('kunci' => 'index',     'judul' => 'Dashboard',   'file' => 'index.php',     'ikon' => $ikon_dasbor),
-    array('kunci' => 'barang',    'judul' => 'Produk',      'file' => 'barang.php',    'ikon' => $ikon_produk),
+    array('kunci' => 'barang',    'judul' => 'Menu',        'file' => 'barang.php',    'ikon' => $ikon_produk),
     array('kunci' => 'transaksi', 'judul' => 'Kasir',       'file' => 'transaksi.php', 'ikon' => $ikon_kasir),
     array('kunci' => 'riwayat',   'judul' => 'Riwayat',     'file' => 'riwayat.php',   'ikon' => $ikon_riwayat),
-=======
-// Daftar menu sidebar disimpan di array supaya tidak perlu
-// menulis ulang kode HTML untuk setiap menu.
-$menu_sidebar = array(
-    array('kunci' => 'index',     'judul' => 'Dashboard',   'file' => 'index.php'),
-    array('kunci' => 'barang',    'judul' => 'Data Barang', 'file' => 'barang.php'),
-    array('kunci' => 'transaksi', 'judul' => 'Kasir',       'file' => 'transaksi.php'),
-    array('kunci' => 'riwayat',   'judul' => 'Riwayat',     'file' => 'riwayat.php'),
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 );
+
+// Kasir tidak boleh melihat menu Dashboard di sidebar.
+// Pembatasan URL-nya tetap dilakukan di index.php.
+if (!apakah_admin()) {
+    $menu_sidebar = array_values(array_filter($menu_sidebar, function ($menu) {
+        return $menu['kunci'] !== 'index';
+    }));
+}
 
 // Pesan bisa dikirim langsung oleh halaman ($pesan), atau disimpan
 // sementara di session (flash message) setelah redirect.
@@ -95,9 +96,8 @@ if ($pesan === '' && isset($_SESSION['pesan'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($judul_halaman) ?> - Kasir</title>
+    <title><?= htmlspecialchars($judul_halaman) ?> - Kasir Restoran</title>
 
-<<<<<<< HEAD
     <!-- Font Poppins dari Google Fonts. Kalau offline, browser memakai font cadangan. -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -111,40 +111,16 @@ if ($pesan === '' && isset($_SESSION['pesan'])) {
 
 <!-- ==================== SIDEBAR KAPSUL ==================== -->
 <aside class="sidebar" id="sidebar" aria-label="Menu utama">
-    <a href="index.php" class="merek-sidebar" aria-label="Beranda Kasir">
+    <a href="<?= htmlspecialchars($beranda) ?>" class="merek-sidebar" aria-label="Beranda Kasir Restoran">
         <span class="logo-kasir">K</span>
     </a>
-=======
-    <!-- Semua warna dan tampilan diatur di file CSS terpisah. -->
-    <link rel="stylesheet" href="assets/css/style.css">
-</head>
-<body>
-
-<!-- ==================== SIDEBAR KIRI ==================== -->
-<aside class="sidebar" id="sidebar">
-    <div class="merek-sidebar">
-        <div>
-            <strong>Kasir</strong>
-            <small>Aplikasi Kasir Sederhana</small>
-        </div>
-    </div>
-
-    <div class="info-pengguna-sidebar">
-        <span class="label">Kasir Aktif</span>
-        <strong><?= htmlspecialchars(isset($_SESSION['nama']) ? $_SESSION['nama'] : 'Kasir') ?></strong>
-    </div>
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
     <nav class="menu-sidebar">
         <?php foreach ($menu_sidebar as $menu): ?>
             <a href="<?= $menu['file'] ?>"
-<<<<<<< HEAD
                class="<?= $halaman_aktif === $menu['kunci'] ? 'aktif' : '' ?>"
                <?= $halaman_aktif === $menu['kunci'] ? 'aria-current="page"' : '' ?>>
                 <?= $menu['ikon'] ?>
-=======
-               class="<?= $halaman_aktif === $menu['kunci'] ? 'aktif' : '' ?>">
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
                 <span><?= htmlspecialchars($menu['judul']) ?></span>
             </a>
         <?php endforeach; ?>
@@ -152,21 +128,10 @@ if ($pesan === '' && isset($_SESSION['pesan'])) {
         <!-- Logout diletakkan paling bawah agar tidak mudah terpencet. -->
         <a href="logout.php" class="menu-keluar"
            onclick="return confirm('Yakin ingin keluar dari aplikasi?')">
-<<<<<<< HEAD
             <?= $ikon_keluar ?>
             <span>Logout</span>
         </a>
     </nav>
-=======
-            <span>Logout</span>
-        </a>
-    </nav>
-
-    <div class="footer-sidebar">
-        Aplikasi Kasir Sederhana<br>
-        &copy; <?= date('Y') ?>
-    </div>
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 </aside>
 
 <!-- ==================== AREA KONTEN ==================== -->
@@ -178,16 +143,15 @@ if ($pesan === '' && isset($_SESSION['pesan'])) {
                 aria-label="Buka menu" aria-controls="sidebar" aria-expanded="false">
             &#9776;
         </button>
-        <a class="merek-mobile" href="index.php">Kasir</a>
+        <a class="merek-mobile" href="<?= htmlspecialchars($beranda) ?>">Kasir Restoran</a>
     </div>
 
     <main class="container">
 
-<<<<<<< HEAD
         <!-- ==================== HEADER HALAMAN ==================== -->
         <header class="header-halaman">
             <div class="kelompok-judul">
-                <span class="label-kecil">Primary</span>
+                <span class="label-kecil">Restoran</span>
                 <h1><?= htmlspecialchars($judul_halaman) ?></h1>
             </div>
 
@@ -203,14 +167,15 @@ if ($pesan === '' && isset($_SESSION['pesan'])) {
                            autocomplete="off">
                 </div>
 
-                <div class="avatar-pengguna" title="<?= htmlspecialchars($nama_pengguna) ?>">
+                <span class="peran-pengguna"><?= htmlspecialchars($peran_pengguna) ?></span>
+
+                <div class="avatar-pengguna"
+                     title="<?= htmlspecialchars($nama_pengguna . ' (' . $peran_pengguna . ')') ?>">
                     <?= htmlspecialchars($inisial_pengguna) ?>
                 </div>
             </div>
         </header>
 
-=======
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
     <?php
     // Menampilkan pesan kalau ada. htmlspecialchars dipakai supaya
     // isi pesan tidak bisa menyisipkan kode HTML berbahaya.

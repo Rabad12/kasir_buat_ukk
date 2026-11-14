@@ -1,29 +1,28 @@
-/* ============================================================
-   FILE: assets/js/kasir.js
-   TUGAS: Mengatur keranjang belanja di halaman kasir.
-
-   Cara kerja singkat:
-   1. Data barang dari PHP disimpan di variabel "dataBarang".
-   2. Isi keranjang disimpan di variabel "keranjang".
-      Bentuknya sederhana: { id_barang: jumlah }.
-      Contoh: { "1": 2, "4": 1 } artinya barang id 1 dibeli 2 buah.
-   3. Setiap kali tombol + / - / hapus diklik, data diubah lalu
-      fungsi renderSemua() dipanggil untuk memperbarui tampilan.
-   4. Saat Bayar, keranjang diubah menjadi JSON dan dikirim ke
-      proses_transaksi.php lewat input tersembunyi.
-   ============================================================ */
+/**
+ * FILE: assets/js/kasir.js
+ * TUGAS: Mengatur keranjang pesanan di halaman kasir restoran.
+ *
+ * Cara kerja singkat:
+ * 1. Data menu dari PHP disimpan di variabel "dataBarang".
+ *    Setiap menu membawa "diskon" (persen) miliknya sendiri.
+ * 2. Isi keranjang disimpan di variabel "keranjang".
+ *    Bentuknya sederhana: { id_barang: jumlah }.
+ *    Contoh: { "1": 2, "4": 1 } artinya menu id 1 dipesan 2 porsi.
+ * 3. Setiap kali tombol + / - / hapus diklik, data diubah lalu
+ *    fungsi renderSemua() dipanggil untuk memperbarui tampilan.
+ * 4. Diskon langsung dihitung per menu saat item masuk keranjang.
+ * 5. Saat Bayar, keranjang diubah menjadi JSON dan dikirim ke
+ *    proses_transaksi.php lewat input tersembunyi. Server tetap
+ *    menghitung ulang diskon, harga, dan pajak dari database.
+ */
 
 // ---------- ELEMEN HALAMAN ----------
 var daftarBarangEl   = document.getElementById('daftar-barang');
 var isiKeranjangEl   = document.getElementById('isi-keranjang');
 var jumlahItemEl     = document.getElementById('jumlah-item');
-<<<<<<< HEAD
 var subtotalBelanjaEl = document.getElementById('subtotal-belanja');
-var labelDiskonEl    = document.getElementById('label-diskon');
 var nilaiDiskonEl    = document.getElementById('nilai-diskon');
 var nilaiPajakEl     = document.getElementById('nilai-pajak');
-=======
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 var totalBelanjaEl   = document.getElementById('total-belanja');
 var kembalianEl      = document.getElementById('kembalian');
 var peringatanEl     = document.getElementById('peringatan-bayar');
@@ -32,20 +31,30 @@ var tombolBayarEl    = document.getElementById('tombol-bayar');
 var formBayarEl      = document.getElementById('form-bayar');
 var inputPencarianEl = document.getElementById('pencarian-barang');
 
-// Kata kunci pencarian barang (huruf kecil semua).
+// Kata kunci pencarian menu (huruf kecil semua).
 var kataPencarian = '';
 
 // ============================================================
 // FUNGSI BANTU
 // ============================================================
 
-// Mengubah angka menjadi format rupiah, contoh: 15000 -> Rp 15.000
+/**
+ * Mengubah angka menjadi format rupiah.
+ *
+ * @param {number} angka Nilai uang yang akan ditampilkan.
+ * @returns {string} Teks rupiah, contoh "Rp 15.000".
+ */
 function formatRupiah(angka) {
     return 'Rp ' + Number(angka).toLocaleString('id-ID');
 }
 
-// Mengamankan teks dari database sebelum dimasukkan ke HTML.
-// Tujuannya supaya nama barang tidak bisa menyisipkan kode HTML.
+/**
+ * Mengamankan teks dari database sebelum dimasukkan ke HTML.
+ * Tujuannya supaya nama menu tidak bisa menyisipkan kode HTML.
+ *
+ * @param {string} teks Teks mentah dari data menu.
+ * @returns {string} Teks yang sudah di-escape untuk HTML.
+ */
 function escapeHtml(teks) {
     return String(teks)
         .replace(/&/g, '&amp;')
@@ -55,18 +64,16 @@ function escapeHtml(teks) {
         .replace(/'/g, '&#039;');
 }
 
-// Mengambil uang bayar yang diketik kasir.
-<<<<<<< HEAD
-// Nilai bisa berisi titik ribuan (contoh: 100.000), jadi titik
-// dan karakter lain dibuang dulu. Kalau kosong, dianggap 0.
+/**
+ * Mengambil uang bayar yang diketik kasir.
+ * Nilai bisa berisi titik ribuan (contoh: 100.000), jadi titik
+ * dan karakter lain dibuang dulu. Kalau kosong, dianggap 0.
+ *
+ * @returns {number} Nilai uang bayar dalam satuan rupiah.
+ */
 function ambilUangBayar() {
     var teks  = String(uangBayarEl.value).replace(/[^\d]/g, '');
     var nilai = parseInt(teks, 10);
-=======
-// Kalau kosong atau bukan angka, dianggap 0.
-function ambilUangBayar() {
-    var nilai = parseInt(uangBayarEl.value, 10);
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
     if (isNaN(nilai) || nilai < 0) {
         return 0;
@@ -79,7 +86,12 @@ function ambilUangBayar() {
 // FUNGSI KERANJANG
 // ============================================================
 
-// Menambah 1 barang ke keranjang.
+/**
+ * Menambah 1 porsi menu ke keranjang tanpa melebihi stok.
+ *
+ * @param {number|string} id ID menu yang akan ditambahkan.
+ * @returns {void}
+ */
 function tambahKeKeranjang(id) {
     var barang = dataBarang[id];
 
@@ -98,7 +110,13 @@ function tambahKeKeranjang(id) {
     renderSemua();
 }
 
-// Mengurangi 1 barang dari keranjang.
+/**
+ * Mengurangi 1 porsi menu dari keranjang. Bila jumlahnya habis,
+ * menu dihapus dari keranjang.
+ *
+ * @param {number|string} id ID menu yang akan dikurangi.
+ * @returns {void}
+ */
 function kurangiDariKeranjang(id) {
     if (!keranjang[id]) {
         return;
@@ -114,7 +132,12 @@ function kurangiDariKeranjang(id) {
     renderSemua();
 }
 
-// Menghapus satu barang dari keranjang, berapa pun jumlahnya.
+/**
+ * Menghapus satu menu dari keranjang, berapa pun jumlahnya.
+ *
+ * @param {number|string} id ID menu yang akan dihapus.
+ * @returns {void}
+ */
 function hapusDariKeranjang(id) {
     if (keranjang[id]) {
         delete keranjang[id];
@@ -122,13 +145,17 @@ function hapusDariKeranjang(id) {
     }
 }
 
-// Menghapus semua isi keranjang.
+/**
+ * Menghapus semua isi keranjang setelah kasir menyetujui.
+ *
+ * @returns {void}
+ */
 function kosongkanKeranjang() {
     if (Object.keys(keranjang).length === 0) {
         return;
     }
 
-    if (confirm('Kosongkan semua item di keranjang?')) {
+    if (confirm('Kosongkan semua pesanan di keranjang?')) {
         keranjang = {};
         renderSemua();
     }
@@ -138,22 +165,19 @@ function kosongkanKeranjang() {
 // FUNGSI HITUNG
 // ============================================================
 
-<<<<<<< HEAD
-// Menghitung subtotal belanja dari harga di dataBarang.
-// Subtotal = jumlah semua harga barang sebelum diskon dan pajak.
+/**
+ * Menghitung subtotal kotor pesanan dari harga di dataBarang.
+ * Subtotal = jumlah semua harga menu sebelum diskon dan pajak.
+ *
+ * @returns {number} Subtotal pesanan dalam rupiah.
+ */
 function hitungSubtotal() {
     var subtotal = 0;
-=======
-// Menghitung total belanja dari harga di dataBarang.
-function hitungTotal() {
-    var total = 0;
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
     for (var id in keranjang) {
         var barang = dataBarang[id];
 
         if (barang) {
-<<<<<<< HEAD
             subtotal = subtotal + (barang.harga * keranjang[id]);
         }
     }
@@ -161,58 +185,85 @@ function hitungTotal() {
     return subtotal;
 }
 
-// Mencari diskon yang berlaku sesuai subtotal.
-// Hasilnya berisi persen dan nilai diskon dalam rupiah.
-function hitungDiskon(subtotal) {
-    var persen = 0;
+/**
+ * Menghitung diskon satu menu berdasarkan persentase menu tersebut.
+ * Diskon dibulatkan ke rupiah terdekat.
+ *
+ * @param {object} barang Data menu (mengandung harga dan diskon persen).
+ * @param {number} jumlah Jumlah porsi yang dipesan.
+ * @returns {number} Nilai diskon dalam rupiah.
+ */
+function hitungDiskonBarang(barang, jumlah) {
+    if (!barang || barang.diskon <= 0 || jumlah <= 0) {
+        return 0;
+    }
 
-    // aturanDiskon dikirim dari PHP (config/diskon.php).
-    for (var i = 0; i < aturanDiskon.length; i++) {
-        if (subtotal >= aturanDiskon[i].min) {
-            persen = aturanDiskon[i].persen;
+    return Math.round((barang.harga * jumlah) * barang.diskon / 100);
+}
+
+/**
+ * Menghitung total diskon dari semua menu di keranjang.
+ *
+ * @returns {number} Total diskon menu dalam rupiah.
+ */
+function hitungDiskonTotal() {
+    var totalDiskon = 0;
+
+    for (var id in keranjang) {
+        var barang = dataBarang[id];
+
+        if (barang && keranjang[id] > 0) {
+            totalDiskon = totalDiskon + hitungDiskonBarang(barang, keranjang[id]);
         }
     }
 
-    return {
-        persen: persen,
-        nilai: Math.round(subtotal * persen / 100)
-    };
+    return totalDiskon;
 }
 
-// Pajak dihitung dari subtotal setelah dikurangi diskon.
+/**
+ * Menghitung pajak dari subtotal setelah dikurangi diskon.
+ *
+ * @param {number} dasarPajak Subtotal setelah dikurangi diskon.
+ * @returns {number} Nilai pajak dalam rupiah.
+ */
 function hitungPajak(dasarPajak) {
     return Math.round(dasarPajak * pajakPersen / 100);
 }
 
-// Menghitung semua angka yang tampil di ringkasan keranjang.
+/**
+ * Menghitung semua angka yang tampil di ringkasan pesanan.
+ * Subtotal masih harga kotor; diskon diambil dari diskon tiap menu.
+ *
+ * @returns {{subtotal: number, diskon: number, pajak: number, total: number}} Rincian pembayaran.
+ */
 function hitungRincian() {
     var subtotal = hitungSubtotal();
-    var diskon   = hitungDiskon(subtotal);
-    var dasar    = subtotal - diskon.nilai;
+    var diskon   = hitungDiskonTotal();
+    var dasar    = subtotal - diskon;
     var pajak    = hitungPajak(dasar);
 
     return {
         subtotal: subtotal,
-        diskon_persen: diskon.persen,
-        diskon: diskon.nilai,
+        diskon: diskon,
         pajak: pajak,
         total: dasar + pajak
     };
 }
 
-// Total akhir yang harus dibayar (setelah diskon dan pajak).
+/**
+ * Menghitung total akhir yang harus dibayar (setelah diskon dan pajak).
+ *
+ * @returns {number} Total pembayaran dalam rupiah.
+ */
 function hitungTotal() {
     return hitungRincian().total;
-=======
-            total = total + (barang.harga * keranjang[id]);
-        }
-    }
-
-    return total;
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 }
 
-// Menghitung kembalian. Kalau uang kurang, hasilnya 0.
+/**
+ * Menghitung kembalian. Kalau uang kurang, hasilnya 0.
+ *
+ * @returns {number} Kembalian dalam rupiah.
+ */
 function hitungKembalian() {
     var selisih = ambilUangBayar() - hitungTotal();
 
@@ -227,21 +278,26 @@ function hitungKembalian() {
 // FUNGSI TAMPILAN (RENDER)
 // ============================================================
 
-// Menampilkan kartu daftar barang sesuai kata pencarian.
+/**
+ * Menampilkan kartu daftar menu sesuai kata pencarian.
+ * Kalau menu punya diskon, harga asli dicoret dan harga akhir ditampilkan.
+ *
+ * @returns {void}
+ */
 function tampilkanDaftarBarang() {
     var potonganHtml = [];
 
     for (var id in dataBarang) {
         var barang = dataBarang[id];
 
-        // Kalau sedang mencari, lewati barang yang namanya tidak cocok.
+        // Kalau sedang mencari, lewati menu yang namanya tidak cocok.
         if (kataPencarian !== '' && barang.nama.toLowerCase().indexOf(kataPencarian) === -1) {
             continue;
         }
 
         var jumlah = keranjang[barang.id] || 0;
 
-        // Tombol minus dan angka hanya muncul kalau barang ada di keranjang.
+        // Tombol minus dan angka hanya muncul kalau menu ada di keranjang.
         var tombolMinus = '';
 
         if (jumlah > 0) {
@@ -264,13 +320,27 @@ function tampilkanDaftarBarang() {
             catatan = '<span class="label-maks">Stok habis/maks</span>';
         }
 
+        // Harga akhir setelah diskon menu.
+        var diskonNilai = hitungDiskonBarang(barang, 1);
+        var hargaAkhir  = barang.harga - diskonNilai;
+        var hargaHtml   = '<div class="harga-barang">' + formatRupiah(hargaAkhir) + '</div>';
+
+        if (barang.diskon > 0) {
+            hargaHtml =
+                '<div class="harga-barang">' +
+                    '<span class="harga-diskon">' + formatRupiah(hargaAkhir) + '</span> ' +
+                    '<span class="harga-asli">' + formatRupiah(barang.harga) + '</span> ' +
+                    '<span class="badge badge-biru badge-kecil">-' + barang.diskon + '%</span>' +
+                '</div>';
+        }
+
         potonganHtml.push(
             '<div class="kartu-barang">' +
                 '<div class="info-barang">' +
                     '<div class="kode-barang">' + escapeHtml(barang.kode) + '</div>' +
                     '<h3>' + escapeHtml(barang.nama) + '</h3>' +
-                    '<div class="harga-barang">' + formatRupiah(barang.harga) + '</div>' +
-                    '<div class="stok-barang">Sisa stok: ' + barang.stok + '</div>' +
+                    hargaHtml +
+                    '<div class="stok-barang">Sisa porsi: ' + barang.stok + '</div>' +
                 '</div>' +
                 '<div class="kontrol-jumlah">' +
                     tombolMinus +
@@ -283,18 +353,24 @@ function tampilkanDaftarBarang() {
     }
 
     if (potonganHtml.length === 0) {
-        // Bedakan antara "tidak ada barang sama sekali" dan "hasil pencarian kosong".
+        // Bedakan antara "tidak ada menu sama sekali" dan "hasil pencarian kosong".
         if (Object.keys(dataBarang).length === 0) {
-            daftarBarangEl.innerHTML = '<p class="empty">Belum ada barang. Silakan tambah barang terlebih dahulu.</p>';
+            daftarBarangEl.innerHTML = '<p class="empty">Belum ada menu. Silakan tambah menu terlebih dahulu.</p>';
         } else {
-            daftarBarangEl.innerHTML = '<p class="empty">Barang tidak ditemukan.</p>';
+            daftarBarangEl.innerHTML = '<p class="empty">Menu tidak ditemukan.</p>';
         }
     } else {
         daftarBarangEl.innerHTML = potonganHtml.join('');
     }
 }
 
-// Menampilkan semua item yang ada di keranjang.
+/**
+ * Menampilkan semua menu yang ada di keranjang pesanan.
+ * Diskon tiap menu sudah dipotong dari subtotal item, sehingga
+ * angka yang tampil adalah harga yang benar-benar dibayar.
+ *
+ * @returns {void}
+ */
 function tampilkanKeranjang() {
     var potonganHtml = [];
     var jumlahItem   = 0;
@@ -306,8 +382,10 @@ function tampilkanKeranjang() {
             continue;
         }
 
-        var jumlah   = keranjang[id];
-        var subtotal = barang.harga * jumlah;
+        var jumlah        = keranjang[id];
+        var subtotalKotor = barang.harga * jumlah;
+        var diskonItem    = hitungDiskonBarang(barang, jumlah);
+        var subtotal      = subtotalKotor - diskonItem;
 
         jumlahItem = jumlahItem + jumlah;
 
@@ -315,14 +393,37 @@ function tampilkanKeranjang() {
         var plusNonaktif = (jumlah >= barang.stok) ? ' disabled' : '';
         var judulPlus    = plusNonaktif !== '' ? 'Stok habis/maks' : 'Tambah';
 
+        // Harga satuan setelah diskon, dengan harga asli dicoret bila ada diskon.
+        var hargaSatuanHtml = formatRupiah(barang.harga) + ' / porsi';
+
+        if (barang.diskon > 0) {
+            var hargaSatuanDiskon = barang.harga - hitungDiskonBarang(barang, 1);
+
+            hargaSatuanHtml =
+                '<span class="harga-asli">' + formatRupiah(barang.harga) + '</span> ' +
+                formatRupiah(hargaSatuanDiskon) + ' / porsi';
+        }
+
+        // Keterangan diskon item, hanya muncul kalau menu punya diskon.
+        var keteranganDiskon = '';
+
+        if (barang.diskon > 0) {
+            keteranganDiskon =
+                '<span class="diskon-item">Diskon ' + barang.diskon + '% ' +
+                '(&minus;' + formatRupiah(diskonItem) + ')</span>';
+        }
+
         potonganHtml.push(
             '<div class="item-keranjang">' +
                 '<div class="baris-atas-item">' +
                     '<span class="nama-item">' + escapeHtml(barang.nama) + '</span>' +
                     '<span class="subtotal-item">' + formatRupiah(subtotal) + '</span>' +
                 '</div>' +
+                '<div class="rincian-item">' +
+                    '<span class="harga-satuan-item">' + hargaSatuanHtml + '</span>' +
+                    keteranganDiskon +
+                '</div>' +
                 '<div class="baris-bawah-item">' +
-                    '<span class="harga-satuan-item">' + formatRupiah(barang.harga) + ' / item</span>' +
                     '<div class="pengatur-jumlah">' +
                         '<button type="button" class="tombol-jumlah" title="Kurangi" ' +
                         'onclick="kurangiDariKeranjang(' + barang.id + ')">&#8722;</button>' +
@@ -339,50 +440,37 @@ function tampilkanKeranjang() {
 
     if (potonganHtml.length === 0) {
         isiKeranjangEl.innerHTML =
-            '<p class="empty">Keranjang masih kosong.<br>Pilih barang di sebelah kiri.</p>';
-        jumlahItemEl.textContent = '0 item';
+            '<p class="empty">Keranjang masih kosong.<br>Pilih menu di sebelah kiri.</p>';
+        jumlahItemEl.textContent = '0 porsi';
     } else {
         isiKeranjangEl.innerHTML = potonganHtml.join('');
-        jumlahItemEl.textContent = jumlahItem + ' item';
+        jumlahItemEl.textContent = jumlahItem + ' porsi';
     }
 }
 
-<<<<<<< HEAD
-// Memperbarui subtotal, diskon, pajak, total, kembalian,
-// peringatan, dan tombol Bayar.
+/**
+ * Memperbarui subtotal, diskon menu, pajak, total, kembalian,
+ * peringatan, dan tombol Bayar.
+ *
+ * @returns {void}
+ */
 function perbaruiPembayaran() {
     var rincian = hitungRincian();
     var uang    = ambilUangBayar();
     var adaItem = Object.keys(keranjang).length > 0;
 
     subtotalBelanjaEl.textContent = formatRupiah(rincian.subtotal);
-    labelDiskonEl.textContent     = '(' + rincian.diskon_persen + '%)';
     nilaiDiskonEl.textContent     = formatRupiah(rincian.diskon);
     nilaiPajakEl.textContent      = formatRupiah(rincian.pajak);
     totalBelanjaEl.textContent    = formatRupiah(rincian.total);
     kembalianEl.textContent       = formatRupiah(hitungKembalian());
-=======
-// Memperbarui total, kembalian, peringatan, dan tombol Bayar.
-function perbaruiPembayaran() {
-    var total  = hitungTotal();
-    var uang   = ambilUangBayar();
-    var adaItem = Object.keys(keranjang).length > 0;
-
-    totalBelanjaEl.textContent = formatRupiah(total);
-    kembalianEl.textContent    = formatRupiah(hitungKembalian());
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 
     if (!adaItem) {
-        peringatanEl.textContent = 'Keranjang masih kosong. Pilih barang terlebih dahulu.';
+        peringatanEl.textContent = 'Keranjang masih kosong. Pilih menu terlebih dahulu.';
         peringatanEl.hidden      = false;
         tombolBayarEl.disabled   = true;
-<<<<<<< HEAD
     } else if (uang < rincian.total) {
         peringatanEl.textContent = 'Uang bayar kurang ' + formatRupiah(rincian.total - uang) + '.';
-=======
-    } else if (uang < total) {
-        peringatanEl.textContent = 'Uang bayar kurang ' + formatRupiah(total - uang) + '.';
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
         peringatanEl.hidden      = false;
         tombolBayarEl.disabled   = true;
     } else {
@@ -391,8 +479,12 @@ function perbaruiPembayaran() {
     }
 }
 
-// Satu fungsi untuk memperbarui seluruh tampilan.
-// Dipanggil setiap kali isi keranjang berubah.
+/**
+ * Satu fungsi untuk memperbarui seluruh tampilan.
+ * Dipanggil setiap kali isi keranjang berubah.
+ *
+ * @returns {void}
+ */
 function renderSemua() {
     tampilkanDaftarBarang();
     tampilkanKeranjang();
@@ -403,7 +495,7 @@ function renderSemua() {
 // PERSIAPAN SAAT HALAMAN DIBUKA
 // ============================================================
 
-// Pencarian barang: setiap kali mengetik, daftar barang disaring.
+// Pencarian menu: setiap kali mengetik, daftar menu disaring.
 if (inputPencarianEl) {
     inputPencarianEl.addEventListener('input', function () {
         kataPencarian = this.value.toLowerCase();
@@ -424,7 +516,7 @@ if (formBayarEl) {
 
         if (Object.keys(keranjang).length === 0) {
             event.preventDefault();
-            alert('Keranjang masih kosong. Pilih barang terlebih dahulu.');
+            alert('Keranjang masih kosong. Pilih menu terlebih dahulu.');
             return;
         }
 

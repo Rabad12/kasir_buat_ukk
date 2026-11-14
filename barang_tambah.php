@@ -1,152 +1,176 @@
 <?php
-// ============================================================
-// FILE: barang_tambah.php
-// TUGAS: Form dan proses untuk menambah barang baru.
-//
-// Alur:
-// 1. Kasir mengisi form.
-// 2. Data dicek (tidak boleh kosong, harga/stok harus angka).
-// 3. Kode barang dicek supaya tidak kembar.
-// 4. Data disimpan ke tabel barang dengan prepared statement.
-// ============================================================
+/**
+ * FILE: barang_tambah.php
+ * TUGAS: Form dan proses untuk menambah menu restoran baru.
+ *
+ * Alur:
+ * 1. Admin memilih kategori dan mengisi data menu.
+ * 2. Data dicek (tidak boleh kosong, harga/stok/diskon harus angka).
+ * 3. Kode menu dibuat otomatis dari kategorinya (MKN/MNM).
+ * 4. Data disimpan ke tabel barang dengan prepared statement.
+ *
+ * Diskon disimpan sebagai persen (0-100) dan akan dipakai
+ * otomatis saat menu masuk ke keranjang kasir.
+ *
+ * Halaman ini hanya untuk admin.
+ *
+ * @return void
+ */
 
 session_start();
 include 'config/koneksi.php';
+include 'config/kode_menu.php';
+include 'config/akses.php';
 
-// Cek login.
-if (!isset($_SESSION['id_user'])) {
-    header('Location: login.php');
-    exit;
-}
+// Hanya admin yang boleh menambah menu.
+wajib_admin();
 
 // Nilai awal form (kosong).
-$kode_barang = '';
-$nama_barang = '';
-$harga       = '';
-$stok        = '';
-$pesan       = '';
+$kategori      = 'makanan';
+$nama_barang   = '';
+$harga         = '';
+$stok          = '';
+$diskon_persen = '0';
+$pesan         = '';
 
 // Proses hanya kalau form dikirim.
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // trim() menghapus spasi di awal dan akhir.
-    $kode_barang = trim(isset($_POST['kode_barang']) ? $_POST['kode_barang'] : '');
-    $nama_barang = trim(isset($_POST['nama_barang']) ? $_POST['nama_barang'] : '');
-    $harga       = trim(isset($_POST['harga']) ? $_POST['harga'] : '');
-    $stok        = trim(isset($_POST['stok']) ? $_POST['stok'] : '');
+    $kategori      = trim(isset($_POST['kategori']) ? $_POST['kategori'] : 'makanan');
+    $nama_barang   = trim(isset($_POST['nama_barang']) ? $_POST['nama_barang'] : '');
+    $harga         = trim(isset($_POST['harga']) ? $_POST['harga'] : '');
+    $stok          = trim(isset($_POST['stok']) ? $_POST['stok'] : '');
+    $diskon_persen = trim(isset($_POST['diskon_persen']) ? $_POST['diskon_persen'] : '0');
 
-<<<<<<< HEAD
     // Harga boleh diketik dengan titik ribuan (contoh: 65.000).
     // Titik dibuang dulu supaya bisa dicek dan disimpan sebagai angka.
     $harga = str_replace('.', '', $harga);
 
-=======
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
+    // Kalau kolom diskon dikosongkan, anggap tidak ada diskon.
+    if ($diskon_persen === '') {
+        $diskon_persen = '0';
+    }
+
     // ---------- VALIDASI DASAR ----------
-    if ($kode_barang === '' || $nama_barang === '' || $harga === '' || $stok === '') {
+    if (!in_array($kategori, array('makanan', 'minuman'), true)) {
+        $pesan = 'Kategori menu tidak dikenal.';
+    } elseif ($nama_barang === '' || $harga === '' || $stok === '' || $diskon_persen === '') {
         $pesan = 'Semua kolom wajib diisi.';
     } elseif (!ctype_digit($harga)) {
-<<<<<<< HEAD
         // ctype_digit hanya menerima angka bulat (0-9).
         $pesan = 'Harga harus berupa angka bulat. Contoh: 15.000.';
-=======
-        // ctype_digit hanya menerima angka bulat (0-9), tanpa titik/koma.
-        $pesan = 'Harga harus berupa angka bulat. Contoh: 15000 (tanpa titik).';
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
     } elseif (!ctype_digit($stok)) {
-        $pesan = 'Stok harus berupa angka bulat. Contoh: 20.';
+        $pesan = 'Stok porsi harus berupa angka bulat. Contoh: 20.';
+    } elseif (!ctype_digit($diskon_persen)) {
+        $pesan = 'Diskon harus berupa angka bulat 0 sampai 100.';
+    } elseif ((int) $diskon_persen > 100) {
+        $pesan = 'Diskon tidak boleh lebih dari 100%.';
     } else {
-        // ---------- CEK KODE BARANG KEMBAR ----------
-        $perintah = mysqli_prepare($koneksi, 'SELECT id FROM barang WHERE kode_barang = ?');
-        mysqli_stmt_bind_param($perintah, 's', $kode_barang);
-        mysqli_stmt_execute($perintah);
-        mysqli_stmt_store_result($perintah);
+        // ---------- BUAT KODE MENU OTOMATIS ----------
+        // Contoh: kategori makanan -> MKN006, minuman -> MNM006.
+        $kode_barang = buat_kode_menu_otomatis($koneksi, $kategori);
 
-        if (mysqli_stmt_num_rows($perintah) > 0) {
-            $pesan = 'Kode barang "' . $kode_barang . '" sudah dipakai. Gunakan kode lain.';
+        // ---------- SIMPAN KE DATABASE ----------
+        // Tipe data pada bind_param:
+        // s = string (teks), i = integer (angka bulat)
+        $perintah = mysqli_prepare(
+            $koneksi,
+            'INSERT INTO barang (kode_barang, nama_barang, harga, stok, diskon_persen)
+             VALUES (?, ?, ?, ?, ?)'
+        );
+        mysqli_stmt_bind_param(
+            $perintah,
+            'ssiii',
+            $kode_barang,
+            $nama_barang,
+            $harga,
+            $stok,
+            $diskon_persen
+        );
+
+        if (mysqli_stmt_execute($perintah)) {
+            // Pesan disimpan di session supaya bisa tampil setelah redirect.
+            $_SESSION['pesan']      = 'Menu "' . $nama_barang . '" (' . $kode_barang . ') berhasil ditambahkan.';
+            $_SESSION['tipe_pesan'] = 'sukses';
+
+            header('Location: barang.php');
+            exit;
         } else {
-            // ---------- SIMPAN KE DATABASE ----------
-            // Tipe data pada bind_param:
-            // s = string (teks), i = integer (angka bulat)
-            $perintah = mysqli_prepare(
-                $koneksi,
-                'INSERT INTO barang (kode_barang, nama_barang, harga, stok) VALUES (?, ?, ?, ?)'
-            );
-            mysqli_stmt_bind_param($perintah, 'ssii', $kode_barang, $nama_barang, $harga, $stok);
-
-            if (mysqli_stmt_execute($perintah)) {
-                // Pesan disimpan di session supaya bisa tampil setelah redirect.
-                $_SESSION['pesan']      = 'Barang "' . $nama_barang . '" berhasil ditambahkan.';
-                $_SESSION['tipe_pesan'] = 'sukses';
-
-                header('Location: barang.php');
-                exit;
-            } else {
-                $pesan = 'Gagal menyimpan barang: ' . mysqli_error($koneksi);
-            }
+            $pesan = 'Gagal menyimpan menu: ' . mysqli_error($koneksi);
         }
     }
 }
 
-$judul_halaman = 'Tambah Barang';
+// Kode berikutnya ditampilkan sebagai pratinjau di form.
+$kode_makanan_berikutnya = buat_kode_menu_otomatis($koneksi, 'makanan');
+$kode_minuman_berikutnya = buat_kode_menu_otomatis($koneksi, 'minuman');
+
+$judul_halaman = 'Tambah Menu';
 $halaman_aktif = 'barang';
 include 'includes/header.php';
 ?>
 
 <div class="page-head">
-<<<<<<< HEAD
-    <div class="muted">Isi data barang baru dengan lengkap.</div>
-=======
-    <div>
-        <h1>Tambah Barang</h1>
-        <div class="muted">Isi data barang baru dengan lengkap.</div>
-    </div>
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
+    <div class="muted">Isi data menu baru dengan lengkap.</div>
     <a class="btn btn-abu" href="barang.php">&larr; Kembali</a>
 </div>
 
 <div class="card" style="max-width: 620px;">
     <form method="post" action="barang_tambah.php">
         <div class="form-group">
-            <label for="kode_barang">Kode Barang</label>
-            <input type="text" id="kode_barang" name="kode_barang"
-                   value="<?= htmlspecialchars($kode_barang) ?>"
-                   placeholder="Contoh: BRG011" maxlength="20" required autofocus>
-            <div class="hint">Kode harus unik, tidak boleh sama dengan barang lain.</div>
+            <label for="kategori">Kategori Menu</label>
+            <select id="kategori" name="kategori" required>
+                <option value="makanan" <?= $kategori === 'makanan' ? 'selected' : '' ?>>
+                    Makanan (kode otomatis: <?= htmlspecialchars($kode_makanan_berikutnya) ?>)
+                </option>
+                <option value="minuman" <?= $kategori === 'minuman' ? 'selected' : '' ?>>
+                    Minuman (kode otomatis: <?= htmlspecialchars($kode_minuman_berikutnya) ?>)
+                </option>
+            </select>
+            <div class="hint">
+                Kode menu dibuat otomatis dari kategori: MKN untuk makanan,
+                MNM untuk minuman. Kode tidak perlu diketik.
+            </div>
         </div>
 
         <div class="form-group">
-            <label for="nama_barang">Nama Barang</label>
+            <label for="nama_barang">Nama Menu</label>
             <input type="text" id="nama_barang" name="nama_barang"
                    value="<?= htmlspecialchars($nama_barang) ?>"
-                   placeholder="Contoh: Beras 5kg" maxlength="100" required>
+                   placeholder="Contoh: Nasi Goreng Spesial" maxlength="100" required autofocus>
         </div>
 
         <div class="form-row">
             <div class="form-group">
                 <label for="harga">Harga (Rp)</label>
-<<<<<<< HEAD
                 <input type="text" id="harga" name="harga"
                        value="<?= htmlspecialchars($harga) ?>"
                        inputmode="numeric" data-format-ribuan
                        autocomplete="off"
-                       placeholder="Contoh: 65.000" required>
-=======
-                <input type="number" id="harga" name="harga"
-                       value="<?= htmlspecialchars($harga) ?>"
-                       placeholder="Contoh: 65000" min="0" step="1" required>
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
+                       placeholder="Contoh: 25.000" required>
             </div>
 
             <div class="form-group">
-                <label for="stok">Stok Awal</label>
+                <label for="stok">Stok Porsi</label>
                 <input type="number" id="stok" name="stok"
                        value="<?= htmlspecialchars($stok) ?>"
                        placeholder="Contoh: 20" min="0" step="1" required>
             </div>
         </div>
 
+        <div class="form-group">
+            <label for="diskon_persen">Diskon Menu (%)</label>
+            <input type="number" id="diskon_persen" name="diskon_persen"
+                   value="<?= htmlspecialchars($diskon_persen) ?>"
+                   min="0" max="100" step="1" placeholder="Contoh: 10" required>
+            <div class="hint">
+                Isi 0 kalau tidak ada diskon. Diskon langsung dipakai
+                saat menu ditambahkan ke keranjang kasir.
+            </div>
+        </div>
+
         <div class="button-row">
-            <button type="submit" class="btn btn-hijau">Simpan Barang</button>
+            <button type="submit" class="btn btn-hijau">Simpan Menu</button>
             <a class="btn btn-abu" href="barang.php">Batal</a>
         </div>
     </form>

@@ -1,35 +1,32 @@
 <?php
-// ============================================================
-// FILE: transaksi.php
-// TUGAS: Halaman kasir dengan dua kolom:
-//   kiri  = daftar barang
-//   kanan = keranjang dan pembayaran
-//
-// Sejak tampilan baru, keranjang TIDAK disimpan di session PHP.
-// Keranjang disimpan di JavaScript (variabel "keranjang") agar
-// tombol tambah/kurang bisa langsung mengubah tampilan tanpa
-// memuat ulang halaman.
-//
-// Saat tombol Bayar diklik, isi keranjang dikirim sebagai JSON
-// ke proses_transaksi.php. Di sana data dicek ulang dan harga
-// tetap diambil dari database (bukan dari browser).
-// ============================================================
+/**
+ * FILE: transaksi.php
+ * TUGAS: Halaman kasir restoran dengan dua kolom.
+ *
+ * Kolom kiri berisi daftar menu, kolom kanan berisi pesanan
+ * (keranjang) dan pembayaran. Keranjang TIDAK disimpan di session
+ * PHP, melainkan di JavaScript (variabel "keranjang") agar tombol
+ * tambah/kurang bisa langsung mengubah tampilan.
+ *
+ * Setiap menu memiliki diskon sendiri (diskon_persen). Diskon
+ * langsung dihitung saat menu masuk ke keranjang, lalu dihitung
+ * ulang di server saat tombol Bayar diklik.
+ *
+ * Halaman ini bisa dipakai admin maupun kasir.
+ *
+ * @return void
+ */
 
 session_start();
 include 'config/koneksi.php';
-<<<<<<< HEAD
 include 'config/diskon.php';
-=======
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
+include 'config/akses.php';
 
-// Cek login.
-if (!isset($_SESSION['id_user'])) {
-    header('Location: login.php');
-    exit;
-}
+// Admin dan kasir yang sudah login boleh membuka halaman kasir.
+wajib_login();
 
 // ------------------------------------------------------------
-// 1. AMBIL SEMUA BARANG DARI DATABASE
+// 1. AMBIL SEMUA MENU DARI DATABASE
 // ------------------------------------------------------------
 $hasil_barang  = mysqli_query($koneksi, 'SELECT * FROM barang ORDER BY nama_barang ASC');
 $daftar_barang = array();
@@ -39,18 +36,20 @@ while ($barang = mysqli_fetch_assoc($hasil_barang)) {
 }
 
 // ------------------------------------------------------------
-// 2. SIAPKAN DATA BARANG UNTUK JAVASCRIPT
+// 2. SIAPKAN DATA MENU UNTUK JAVASCRIPT
 // Hanya kirim data yang diperlukan halaman kasir.
+// "diskon" adalah diskon persen khusus menu tersebut.
 // ------------------------------------------------------------
 $data_barang_js = array();
 
 foreach ($daftar_barang as $barang) {
     $data_barang_js[$barang['id']] = array(
-        'id'    => (int) $barang['id'],
-        'kode'  => $barang['kode_barang'],
-        'nama'  => $barang['nama_barang'],
-        'harga' => (int) $barang['harga'],
-        'stok'  => (int) $barang['stok'],
+        'id'     => (int) $barang['id'],
+        'kode'   => $barang['kode_barang'],
+        'nama'   => $barang['nama_barang'],
+        'harga'  => (int) $barang['harga'],
+        'stok'   => (int) $barang['stok'],
+        'diskon' => (int) $barang['diskon_persen'],
     );
 }
 
@@ -58,7 +57,7 @@ foreach ($daftar_barang as $barang) {
 // 3. AMBIL KERANJANG TERAKHIR (JIKA PEMBAYARAN GAGAL)
 // proses_transaksi.php menyimpan keranjang di session hanya
 // ketika terjadi kesalahan, supaya kasir tidak perlu memilih
-// barang dari awal.
+// menu dari awal.
 // ------------------------------------------------------------
 $keranjang_awal = array();
 
@@ -67,7 +66,7 @@ if (isset($_SESSION['keranjang_terakhir']) && is_array($_SESSION['keranjang_tera
         $id_barang = (int) $id_barang;
         $jumlah    = (int) $jumlah;
 
-        // Abaikan barang yang sudah dihapus atau stoknya habis.
+        // Abaikan menu yang sudah dihapus atau stoknya habis.
         if (isset($daftar_barang[$id_barang]) && $jumlah > 0) {
             $stok = (int) $daftar_barang[$id_barang]['stok'];
 
@@ -81,72 +80,51 @@ if (isset($_SESSION['keranjang_terakhir']) && is_array($_SESSION['keranjang_tera
     unset($_SESSION['keranjang_terakhir']);
 }
 
-<<<<<<< HEAD
-// Menyusun keterangan aturan diskon untuk ditampilkan di halaman.
-$teks_aturan_diskon = array();
-
-foreach ($diskon_bertingkat as $aturan) {
-    if ($aturan['persen'] > 0) {
-        $teks_aturan_diskon[] = $aturan['persen'] . '% mulai Rp '
-            . number_format($aturan['min'], 0, ',', '.');
-    }
-}
-
-=======
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
-$judul_halaman = 'Kasir';
+$judul_halaman = 'Kasir Restoran';
 $halaman_aktif = 'transaksi';
 include 'includes/header.php';
 ?>
 
 <div class="page-head">
-<<<<<<< HEAD
-    <div class="muted">Klik tombol + pada barang, lalu masukkan uang bayar.</div>
-=======
-    <div>
-        <h1>Kasir</h1>
-        <div class="muted">Klik tombol + pada barang, lalu masukkan uang bayar.</div>
-    </div>
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
+    <div class="muted">Klik tombol + pada menu, lalu masukkan uang bayar.</div>
     <a class="btn btn-abu" href="riwayat.php">Lihat Riwayat</a>
 </div>
 
 <div class="layout-kasir">
-    <!-- ==================== KIRI: DAFTAR BARANG ==================== -->
+    <!-- ==================== KIRI: DAFTAR MENU ==================== -->
     <div class="card panel-barang">
         <div class="kepala-panel">
-            <h2>Daftar Barang</h2>
-            <span class="muted"><?= count($daftar_barang) ?> barang tersedia</span>
+            <h2>Daftar Menu</h2>
+            <span class="muted"><?= count($daftar_barang) ?> menu tersedia</span>
         </div>
 
         <div class="kotak-pencarian">
             <input type="search" id="pencarian-barang"
-                   placeholder="Cari nama barang..." autocomplete="off">
+                   placeholder="Cari nama menu..." autocomplete="off">
         </div>
 
-        <!-- Daftar kartu barang diisi oleh assets/js/kasir.js -->
+        <!-- Daftar kartu menu diisi oleh assets/js/kasir.js -->
         <div class="daftar-barang" id="daftar-barang"></div>
     </div>
 
     <!-- ==================== KANAN: KERANJANG ==================== -->
     <div class="card panel-keranjang">
         <div class="kepala-panel">
-            <h2>Keranjang Belanja</h2>
-            <span class="muted" id="jumlah-item">0 item</span>
+            <h2>Keranjang Pesanan</h2>
+            <span class="muted" id="jumlah-item">0 porsi</span>
         </div>
 
-        <!-- Daftar item keranjang diisi oleh assets/js/kasir.js -->
+        <!-- Daftar item pesanan diisi oleh assets/js/kasir.js -->
         <div id="isi-keranjang"></div>
 
         <div class="ringkasan-keranjang">
-<<<<<<< HEAD
             <div class="baris-ringkasan">
                 <span>Subtotal</span>
                 <span id="subtotal-belanja">Rp 0</span>
             </div>
 
             <div class="baris-ringkasan">
-                <span>Diskon <span id="label-diskon">(0%)</span></span>
+                <span>Diskon Menu</span>
                 <span id="nilai-diskon">Rp 0</span>
             </div>
 
@@ -155,37 +133,26 @@ include 'includes/header.php';
                 <span id="nilai-pajak">Rp 0</span>
             </div>
 
-=======
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
             <div class="baris-total">
-                <span>Total Belanja</span>
+                <span>Total Bayar</span>
                 <span class="total-besar" id="total-belanja">Rp 0</span>
             </div>
 
-<<<<<<< HEAD
             <div class="hint" style="margin: -6px 0 14px;">
-                Diskon otomatis: <?= htmlspecialchars(implode(', ', $teks_aturan_diskon)) ?>.
-                Pajak <?= (int) $pajak_persen ?>% dihitung setelah diskon.
+                Diskon mengikuti pengaturan tiap menu dan langsung dihitung
+                saat menu ditambahkan. Pajak <?= (int) $pajak_persen ?>% dihitung setelah diskon.
             </div>
 
-=======
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
             <form method="post" action="proses_transaksi.php" id="form-bayar">
                 <!-- Data keranjang akan diisi oleh JavaScript saat submit. -->
                 <input type="hidden" name="data_keranjang" id="data-keranjang" value="">
 
                 <div class="form-group">
                     <label for="uang-bayar">Uang Bayar (Rp)</label>
-<<<<<<< HEAD
                     <input type="text" id="uang-bayar" name="bayar"
                            inputmode="numeric" data-format-ribuan
                            autocomplete="off"
                            placeholder="Contoh: 100.000" required>
-=======
-                    <input type="number" id="uang-bayar" name="bayar"
-                           min="0" step="1" inputmode="numeric"
-                           placeholder="Contoh: 100000" required>
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
                     <div class="hint">Masukkan uang yang diterima dari pembeli.</div>
                 </div>
 
@@ -203,7 +170,7 @@ include 'includes/header.php';
 
             <button type="button" class="btn btn-abu btn-lebar" id="tombol-kosongkan"
                     onclick="kosongkanKeranjang()" style="margin-top: 10px;">
-                Kosongkan Keranjang
+                Kosongkan Pesanan
             </button>
         </div>
     </div>
@@ -215,15 +182,9 @@ include 'includes/header.php';
     bisa mengganggu kode HTML/JavaScript.
 -->
 <script>
-<<<<<<< HEAD
-    const dataBarang   = <?= json_encode((object) $data_barang_js, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
-    let keranjang      = <?= json_encode((object) $keranjang_awal, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
-    const aturanDiskon = <?= json_encode($diskon_bertingkat, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
-    const pajakPersen  = <?= (int) $pajak_persen ?>;
-=======
-    const dataBarang = <?= json_encode((object) $data_barang_js, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
-    let keranjang    = <?= json_encode((object) $keranjang_awal, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
+    const dataBarang  = <?= json_encode((object) $data_barang_js, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    let keranjang     = <?= json_encode((object) $keranjang_awal, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    const pajakPersen = <?= (int) $pajak_persen ?>;
 </script>
 <script src="assets/js/kasir.js"></script>
 

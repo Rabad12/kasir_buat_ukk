@@ -369,6 +369,20 @@ h4 {
     box-shadow: 0 8px 18px rgba(20, 140, 219, 0.32);
 }
 
+/* Label role pengguna di header (Admin / Kasir). */
+.peran-pengguna {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 13px;
+    border-radius: 999px;
+    background: var(--biru-pucat);
+    color: var(--biru-tua);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
 /* ============================================================
    4. KOMPONEN UMUM
    ============================================================ */
@@ -580,6 +594,13 @@ h4 {
     outline: none;
     border-color: var(--biru-cerah);
     box-shadow: 0 0 0 4px rgba(75, 180, 248, 0.22);
+}
+
+/* Kolom yang hanya bisa dibaca (contoh: kode menu otomatis). */
+.form-group input[readonly] {
+    background: var(--abu-latar);
+    color: var(--teks-abu);
+    cursor: not-allowed;
 }
 
 .form-row {
@@ -1172,6 +1193,28 @@ tbody tr:last-child td {
     font-weight: 700;
 }
 
+/* Harga setelah diskon menu. */
+.harga-diskon {
+    color: var(--biru-tua);
+    font-weight: 700;
+}
+
+/* Harga asli yang dicoret saat menu sedang diskon. */
+.harga-asli {
+    color: var(--teks-abu);
+    font-size: 0.85em;
+    font-weight: 500;
+    text-decoration: line-through;
+}
+
+/* Badge kecil untuk label diskon pada kartu menu. */
+.badge-kecil {
+    min-height: 20px;
+    padding: 2px 8px;
+    font-size: 10px;
+    vertical-align: middle;
+}
+
 .stok-barang {
     margin-top: 2px;
     color: var(--teks-abu);
@@ -1298,6 +1341,25 @@ tbody tr:last-child td {
     font-size: 12px;
 }
 
+/* Baris harga satuan dan keterangan diskon di item keranjang. */
+.rincian-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+/* Label diskon yang berlaku untuk satu item pesanan. */
+.diskon-item {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--hijau-muda);
+    color: var(--hijau-tua);
+    font-size: 11px;
+    font-weight: 600;
+}
+
 .pengatur-jumlah {
     display: flex;
     align-items: center;
@@ -1371,7 +1433,7 @@ tbody tr:last-child td {
     font-weight: 600;
 }
 
-.baris-ringkasan #label-diskon {
+.baris-ringkasan #nilai-diskon {
     color: var(--hijau-tua);
     font-weight: 700;
 }

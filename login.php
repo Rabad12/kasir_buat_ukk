@@ -1,21 +1,33 @@
 <?php
-// ============================================================
-// FILE: login.php
-// TUGAS: Halaman masuk untuk kasir.
-//
-// Alur:
-// 1. Kasir mengisi username dan password.
-// 2. Data dicari di tabel users.
-// 3. Password dicek dengan password_verify().
-// 4. Kalau cocok, data kasir disimpan di session dan masuk dashboard.
-// ============================================================
+/**
+ * FILE: login.php
+ * TUGAS: Halaman masuk untuk admin dan kasir.
+ *
+ * Alur:
+ * 1. Pengguna mengisi username dan password.
+ * 2. Data dicari di tabel users, termasuk role-nya.
+ * 3. Password dicek dengan password_verify().
+ * 4. Kalau cocok, data pengguna dan role disimpan di session.
+ * 5. Admin diarahkan ke dashboard, kasir langsung ke halaman kasir.
+ *
+ * @return void
+ */
 
 session_start();
 include 'config/koneksi.php';
+include 'config/akses.php';
+
+// Session dari versi lama mungkin belum punya role.
+// Paksa login ulang supaya admin/kasir tidak tertukar.
+if (sudah_login() && !isset($_SESSION['role'])) {
+    session_unset();
+    session_destroy();
+    session_start();
+}
 
 // Kalau sudah login, tidak perlu melihat halaman login lagi.
-if (isset($_SESSION['id_user'])) {
-    header('Location: index.php');
+if (sudah_login()) {
+    header('Location: ' . halaman_utama());
     exit;
 }
 
@@ -33,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         // Cari user berdasarkan username.
         // Tanda ? adalah placeholder agar aman dari SQL injection.
-        $perintah = mysqli_prepare($koneksi, 'SELECT id, username, password, nama FROM users WHERE username = ?');
+        $perintah = mysqli_prepare($koneksi, 'SELECT id, username, password, nama, role FROM users WHERE username = ?');
         mysqli_stmt_bind_param($perintah, 's', $username);
         mysqli_stmt_execute($perintah);
         $hasil = mysqli_stmt_get_result($perintah);
@@ -50,8 +62,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['id_user']  = $user['id'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['nama']     = $user['nama'];
+            $_SESSION['role']     = $user['role'];
 
-            header('Location: index.php');
+            header('Location: ' . halaman_utama());
             exit;
         } else {
             // Pesan dibuat umum supaya orang lain tidak tahu
@@ -66,31 +79,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Kasir</title>
+    <title>Login - Kasir Restoran</title>
 
-<<<<<<< HEAD
     <!-- Font Poppins dan dua file CSS: CSS lama lalu tema baru. -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/tema-kasir.css">
-=======
-    <!-- Tampilan login memakai file CSS yang sama dengan halaman lain. -->
-    <link rel="stylesheet" href="assets/css/style.css">
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
 </head>
 <body class="halaman-login">
 
 <div class="kartu-login">
     <div class="login-judul">
-<<<<<<< HEAD
         <div class="logo-login">K</div>
         <h1>Selamat Datang</h1>
-=======
-        <div class="logo-login">Kasir</div>
->>>>>>> 23383983206c20f8c6c257625ac9b4ace03ac248
-        <p>Silakan masuk untuk mulai bekerja</p>
+        <p>Silakan masuk untuk mulai melayani pesanan</p>
     </div>
 
     <?php if ($pesan !== ''): ?>
@@ -116,7 +120,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="info-demo">
         Akun demo:<br>
-        Username <strong>admin</strong> &middot; Password <strong>admin123</strong>
+        Admin &middot; <strong>admin</strong> / <strong>admin123</strong><br>
+        Kasir &middot; <strong>kasir</strong> / <strong>kasir123</strong>
     </div>
 </div>
 
